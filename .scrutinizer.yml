@@ -1,0 +1,22 @@
+filter:
+  excluded_paths:
+    - 'tests/*'
+checks:
+  php: true
+build:
+  environment:
+    php:
+      version: 5.6
+      ini:
+          'date.timezone': 'Europe/London'
+  tests:
+    override:
+      -
+        command: './vendor/bin/phpunit --coverage-clover=/tmp/coverage.xml'
+        coverage:
+          file: '/tmp/coverage.xml'
+          format: 'php-clover'
+tools:
+  php_code_sniffer:
+    config:
+      standard: "PSR2"
