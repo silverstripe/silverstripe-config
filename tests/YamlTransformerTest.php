@@ -15,6 +15,13 @@ class YamlTransformerTest extends TestCase
      */
     protected $directory = 'config';
 
+    /**
+     * Root directory for virtual filesystem
+     *
+     * @var string
+     */
+    protected $root;
+
     protected function setUp()
     {
         $this->root = vfsStream::setup();
@@ -336,5 +343,217 @@ YAML;
 
         $this->expectException(CircularDependencyException::class);
         $transformer->transform();
+    }
+
+    /**
+     * Tests that single only/except statements are applied and that documents are excluded
+     * or included correctly.
+     */
+    public function testSingleOnlyExceptStatements()
+    {
+        $content = <<<YAML
+---
+name: 'test'
+---
+test: 'test'
+
+---
+name: 'override'
+after: 'test'
+Only:
+  testcase: test
+---
+test: 'overwritten'
+
+---
+name: 'dontapply'
+Except:
+  testcase: test
+---
+test: 'not applied'
+YAML;
+        file_put_contents($this->getFilePath('config.yml'), $content);
+
+        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $yaml->addRule('testcase', function() {
+            return true;
+        });
+        $merged = $yaml->transform();
+
+        $expected = [10 => ['test' => 'overwritten']];
+        $this->assertEquals($expected, $merged);
+    }
+
+    /**
+     * Tests that multiple only/except statements are applied and that documents are excluded
+     * or included correctly.
+     */
+    public function testMultipleOnlyExceptStatements()
+    {
+        $content = <<<YAML
+---
+name: 'test'
+---
+test: 'test'
+
+---
+name: 'override'
+after: 'test'
+Only:
+  testcase1: test
+  testcase2: test
+---
+test: 'overwritten'
+
+---
+name: 'dontapply'
+Except:
+  testcase1: test
+  testcase2: test
+---
+test: 'not applied'
+YAML;
+        file_put_contents($this->getFilePath('config.yml'), $content);
+
+        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $yaml->addRule('testcase1', function() {
+            return true;
+        });
+        $yaml->addRule('testcase2', function() {
+            return true;
+        });
+        $merged = $yaml->transform();
+
+        $expected = [10 => ['test' => 'overwritten']];
+        $this->assertEquals($expected, $merged);
+    }
+
+    /**
+     * Test that documents are includes or excluded correctly when an only/except statement
+     * fails.
+     */
+    public function testFailedOnlyExceptStatements()
+    {
+        $content = <<<YAML
+---
+name: 'test'
+---
+test: 'test'
+
+---
+name: 'dontapply'
+after: 'test'
+Only:
+  testcase1: false
+  testcas2: true
+---
+test: 'not applied'
+
+---
+name: 'override'
+Except:
+  testcase1: false
+---
+test: 'overwritten'
+
+---
+name: included
+Only:
+  testcase2: true
+---
+test2: test2
+YAML;
+        file_put_contents($this->getFilePath('config.yml'), $content);
+
+        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $yaml->addRule('testcase1', function() {
+            return false;
+        });
+        $yaml->addRule('testcase2', function() {
+            return true;
+        });
+        $merged = $yaml->transform();
+
+        $expected = [10 => ['test' => 'overwritten', 'test2' => 'test2']];
+        $this->assertEquals($expected, $merged);
+    }
+
+    public function testIgnoredOnlyExceptRule()
+    {
+        $content = <<<YAML
+---
+Only:
+  testcase: ignored
+---
+test1: 'test1'
+
+---
+Except:
+  testcase: ignored
+---
+test2: 'test2'
+YAML;
+        file_put_contents($this->getFilePath('config.yml'), $content);
+
+        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $yaml->addRule('testcase', function() {
+            return false;
+        });
+        $yaml->ignoreRule('testcase');
+        $merged = $yaml->transform();
+
+        $expected = [10 => ['test1' => 'test1', 'test2' => 'test2']];
+        $this->assertEquals($expected, $merged);
+    }
+
+    public function testKeyValueOnlyExceptStatements()
+    {
+        $content = <<<YAML
+---
+Only:
+  testcase:
+    key: value
+    otherkey: othervalue
+---
+key: 'value'
+
+---
+Only:
+  testcase:
+    key: 'notcorrect'
+---
+key: 'notcorrect'
+
+---
+Except:
+  testcase:
+    otherkey: othervalue
+---
+notincluded: notincluded
+
+---
+Only:
+  testcase:
+    arraykey:
+      test: test
+---
+arrays: passed
+YAML;
+        file_put_contents($this->getFilePath('config.yml'), $content);
+
+        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+
+        $testData = [
+            'key' => 'value',
+            'otherkey' => 'othervalue',
+            'arraykey' => ['test' => 'test'],
+        ];
+        $yaml->addRule('testcase', function($key, $value) use($testData) {
+            return ($testData[$key] === $value);
+        });
+        $merged = $yaml->transform();
+
+        $expected = [10 => ['key' => 'value', 'arrays' => 'passed']];
+        $this->assertEquals($expected, $merged);
     }
 }

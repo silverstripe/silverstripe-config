@@ -7,6 +7,7 @@ use Symfony\Component\Yaml\Yaml as YamlParser;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
 use Exception;
+use Closure;
 
 class Yaml
 {
@@ -19,6 +20,16 @@ class Yaml
      * @const string
      */
     const AFTER_FLAG = 'after';
+
+    /**
+     * @var string
+     */
+    const ONLY_FLAG = 'only';
+
+    /**
+     * @var string
+     */
+    const EXCEPT_FLAG = 'except';
 
     /**
      * A list of files. Real, full path.
@@ -45,6 +56,13 @@ class Yaml
      * @var string
      */
     protected $baseDirectory;
+
+    /**
+     * A list of closures to be used in only/except rules.
+     *
+     * @var Closure[]
+     */
+    protected $rules = [];
 
     /**
      * @param string $dir directory to scan for yaml files
@@ -87,6 +105,61 @@ class Yaml
     }
 
     /**
+     * This allows external rules to be added to only/except checks. Config is only
+     * supposed to be setup once, so adding rules is a one-way system. You cannot
+     * remove rules after being set. This also prevent built-in rules from being
+     * removed.
+     *
+     * @param string $rule
+     * @param Closure $func
+     */
+    public function addRule($rule, Closure $func)
+    {
+        $rule = strtolower($rule);
+        $this->rules[$rule] = $func;
+    }
+
+    /**
+     * Checks to see if a rule is present
+     *
+     * @var string
+     *
+     * @return boolean
+     */
+    protected function hasRule($rule)
+    {
+        $rule = strtolower($rule);
+        return isset($this->rules[$rule]);
+    }
+
+    /**
+     * This allows config to ignore only/except rules that have been set. This enables
+     * apps to ignore built-in rules without causing errors where a rule is undefined.
+     * This, is a one-way system and is only meant to be configured once. When you
+     * ignore a rule, you cannot un-ignore it.
+     *
+     * @param string $rule
+     */
+    public function ignoreRule($rule)
+    {
+        $rule = strtolower($rule);
+        $this->ignoreRules[$rule] = $rule;
+    }
+
+    /**
+     * Checks to see if a rule is ignored
+     *
+     * @param string $rule
+     *
+     * @return boolean
+     */
+    protected function isRuleIgnored($rule)
+    {
+        $rule = strtolower($rule);
+        return isset($this->ignoreRules[$rule]);
+    }
+
+    /**
      * Returns an array of YAML documents keyed by name.
      *
      * @return array;
@@ -102,6 +175,11 @@ class Yaml
         $documents = [];
         foreach ($unnamed as $uniqueKey => $document) {
             $header = YamlParser::parse($document['header']);
+            if(!is_array($header)) {
+                $header = [];
+            }
+            $header = array_change_key_case($header, CASE_LOWER);
+
             $content = YamlParser::parse($document['content']);
 
             if (!isset($header['name'])) {
@@ -130,6 +208,8 @@ class Yaml
     /**
      * Because multiple documents aren't supported in symfony/yaml, we have to manually
      * split the files up into their own documents before running them through the parser.
+     * Note: This is not a complete implementation of multi-document YAML parsing. There
+     * are valid yaml cases where this will fail, however they don't match our use-case.
      *
      * @return array
      */
@@ -157,7 +237,14 @@ class Yaml
                     ];
                 }
 
-                if (($context === 'content' || $firstLine) && $line === '---') {
+                if (($context === 'content' || $firstLine) && ($line === '---' || $line === '...')) {
+
+                    // '...' is the end of a document with no more documents after it.
+                    if($line === '...') {
+                        ++$key;
+                        break;
+                    }
+
                     $context = 'header';
 
                     // If this isn't the first line (and therefor first doc) we'll increase
@@ -206,9 +293,9 @@ class Yaml
             }
 
             // Add 'after' dependencies
-            if (isset($header['after'])) {
+            if (isset($header[self::AFTER_FLAG])) {
                 $dependencies = $this->addDependencies(
-                    $header['after'],
+                    $header[self::AFTER_FLAG],
                     $header['name'],
                     self::AFTER_FLAG,
                     $dependencies,
@@ -217,9 +304,9 @@ class Yaml
             }
 
             // Add 'before' dependencies
-            if (isset($header['before'])) {
+            if (isset($header[self::BEFORE_FLAG])) {
                 $dependencies = $this->addDependencies(
-                    $header['before'],
+                    $header[self::BEFORE_FLAG],
                     $header['name'],
                     self::BEFORE_FLAG,
                     $dependencies,
@@ -313,6 +400,12 @@ class Yaml
             return [];
         }
 
+        // If we only have an astericks, we'll add all unnamed docs. By excluding named docs
+        // we don't run into a circular depndency issue.
+        if($pattern === '*') {
+            $pattern = 'anonymous-*';
+        }
+
         // Do pattern matching on file names. This requires us to loop through each document
         // and check their filename and maybe their document name, depending on the pattern.
         // We don't want to do any pattern matching after the first hash as the document name
@@ -323,6 +416,8 @@ class Yaml
             $documentName = substr($pattern, $firstHash + 1);
             $pattern = substr($pattern, 0, $firstHash);
         }
+
+        // @todo better sanitisation needed for special chars (chars used by preg_match())
         $pattern = str_replace(DIRECTORY_SEPARATOR, '\\'.DIRECTORY_SEPARATOR, $pattern);
         $pattern = str_replace('*', '[^\.][a-zA-Z0-9\-_\/\.]+', $pattern);
 
@@ -370,6 +465,7 @@ class Yaml
     protected function getSortedYamlDocuments()
     {
         $documents = $this->getNamedYamlDocuments();
+        $documents = $this->filterByOnlyAndExcept($documents);
 
         if (empty($documents)) {
             return [];
@@ -391,5 +487,77 @@ class Yaml
         }
 
         return $orderedDocuments;
+    }
+
+    protected function filterByOnlyAndExcept($documents)
+    {
+        $filtered = [];
+        foreach($documents as $key => $document) {
+            if(isset($document['header'][self::ONLY_FLAG])) {
+                // If not all rules match, then we exclude this document
+                if(!$this->testRules($document['header'], self::ONLY_FLAG)) {
+                    continue;
+                }
+            }
+
+            if(isset($document['header'][self::EXCEPT_FLAG])) {
+                // If all rules pass, then we exclude this document
+                if($this->testRules($document['header'], self::EXCEPT_FLAG)) {
+                    continue;
+                }
+            }
+
+            $filtered[$key] = $document;
+        }
+
+        return $filtered;
+    }
+
+    protected function testRules($header, $flag)
+    {
+        if(!is_array($header[$flag])) {
+            throw new Exception(sprintf('\'%s\' statements must be an array', $flag));
+        }
+
+        foreach($header[$flag] as $rule => $params) {
+            if($this->isRuleIgnored($rule)) {
+                // If checking only, then return true. Otherwise, return false.
+                return $flag === self::ONLY_FLAG;
+            }
+
+            if(!$this->testSingleRule($rule, $params)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Tests a rule against the given expected result.
+     *
+     * @param string $rule
+     * @param string|array $params
+     *
+     * @return boolean
+     */
+    protected function testSingleRule($rule, $params)
+    {
+        if(!$this->hasRule($rule)) {
+            throw new Exception(sprintf('Rule \'%s\' doesn\'t exist.', $rule));
+        }
+
+        if(!is_array($params)) {
+            return $this->rules[$rule]($params);
+        }
+
+        // If its an array, we'll loop through each parameter
+        foreach($params as $key => $value) {
+            if(!$this->rules[$rule]($key, $value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

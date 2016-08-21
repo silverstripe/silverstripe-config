@@ -164,6 +164,11 @@ class Config
         $merged = [];
         foreach ($mine as $sort => $block) {
             foreach ($block as $key => $value) {
+                if(!is_array($value)) {
+                    $merged[$key] = $value;
+                    continue;
+                }
+
                 $merged[$key] = (new Priority())->merge($value, $theirs);
             }
         }
