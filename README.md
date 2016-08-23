@@ -1,5 +1,7 @@
 # Config
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/?branch=master) [![Code Coverage](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/?branch=master) [![Build Status](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/badges/build.png?b=master)](https://scrutinizer-ci.com/g/micmania1/silverstripe-config/build-status/master)
+
 The aim of this is to implement the SilverStripe config system in a way that can be
 understood by many and to improve performance whilst keeping the powerful features.
 
@@ -17,6 +19,8 @@ disable features which prevent a performant solution. We aim to promote better P
 architecture through the prioritisation of performance over feature.
 
 ## Usage
+
+Below is a basic example of a SilverStripe configuration:
 
 ```
 <?php
@@ -51,6 +55,8 @@ print_r($merged);
 ```
 
 ## Tests
+
+To run the unit tests:
 
 ```
 ./vendor/bin/phpunit
