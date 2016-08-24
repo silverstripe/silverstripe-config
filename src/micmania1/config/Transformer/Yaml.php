@@ -65,7 +65,16 @@ class Yaml
     protected $rules = [];
 
     /**
-     * @param string $dir directory to scan for yaml files
+     * A list of ignored before/after statements.
+     *
+     * @var array
+     */
+    protected $ignoreRules = [];
+
+    /**
+     * @param string $baseDir directory to scan for yaml files
+     * @param Finder $finder
+     * @param int $sort
      */
     public function __construct($baseDir, Finder $finder, $sort = 0)
     {
@@ -86,12 +95,6 @@ class Yaml
      */
     public function transform()
     {
-        $this->merged = [];
-
-        if (empty($this->files)) {
-            return merged;
-        }
-
         $documents = $this->getSortedYamlDocuments();
         $config = [];
         $mergeStrategy = new Priority();
@@ -162,7 +165,7 @@ class Yaml
     /**
      * Returns an array of YAML documents keyed by name.
      *
-     * @return array;
+     * @return array
      */
     protected function getNamedYamlDocuments()
     {
@@ -280,7 +283,6 @@ class Yaml
         $dependencies = [];
         foreach ($documents as $key => $document) {
             $header = $document['header'];
-            $content = $document['content'];
 
             // If the document doesn't have a name, we'll generate one
             if (!isset($header['name'])) {
@@ -293,26 +295,20 @@ class Yaml
             }
 
             // Add 'after' dependencies
-            if (isset($header[self::AFTER_FLAG])) {
-                $dependencies = $this->addDependencies(
-                    $header[self::AFTER_FLAG],
-                    $header['name'],
-                    self::AFTER_FLAG,
-                    $dependencies,
-                    $documents
-                );
-            }
+            $dependencies = $this->addDependencies(
+                $header,
+                self::AFTER_FLAG,
+                $dependencies,
+                $documents
+            );
 
             // Add 'before' dependencies
-            if (isset($header[self::BEFORE_FLAG])) {
-                $dependencies = $this->addDependencies(
-                    $header[self::BEFORE_FLAG],
-                    $header['name'],
-                    self::BEFORE_FLAG,
-                    $dependencies,
-                    $documents
-                );
-            }
+            $dependencies = $this->addDependencies(
+                $header,
+                self::BEFORE_FLAG,
+                $dependencies,
+                $documents
+            );
         }
 
         return $dependencies;
@@ -321,16 +317,22 @@ class Yaml
     /**
      * Incapsulates the logic for adding before/after dependencies.
      *
-     * @param array|string $currentDocument
-     * @param string       $name
+     * @param array        $header
      * @param string       $flag
      * @param array        $dependencies
      * @param array        $documents
      *
      * @return array
      */
-    protected function addDependencies($currentDocument, $name, $flag, $dependencies, $documents)
+    protected function addDependencies($header, $flag, $dependencies, $documents)
     {
+        // If header isn't set then return dependencies
+        if(!isset($header[$flag])) {
+            return $dependencies;
+        }
+        $name = $header['name'];
+        $currentDocument = $header[$flag];
+
         // Normalise our input. YAML accpets string or array values.
         if (!is_array($currentDocument)) {
             $currentDocument = [$currentDocument];
@@ -426,7 +428,7 @@ class Yaml
             // Ensure filename is relative
             $filename = $this->makeRelative($document['filename']);
             if (preg_match('%^'.$pattern.'%', $filename)) {
-                if ($documentName && $documentName != $document['header']['name']) {
+                if (!empty($documentName) && $documentName != $document['header']['name']) {
                     // If we're looking for a specific document. If not found we can continue
                     continue;
                 }
@@ -489,22 +491,26 @@ class Yaml
         return $orderedDocuments;
     }
 
+    /**
+     * This filteres out any yaml documents which don't pass their only
+     * or except statement tests.
+     *
+     * @param array $documents
+     *
+     * @return array
+     */
     protected function filterByOnlyAndExcept($documents)
     {
         $filtered = [];
         foreach($documents as $key => $document) {
-            if(isset($document['header'][self::ONLY_FLAG])) {
-                // If not all rules match, then we exclude this document
-                if(!$this->testRules($document['header'], self::ONLY_FLAG)) {
-                    continue;
-                }
+            // If not all rules match, then we exclude this document
+            if(!$this->testRules($document['header'], self::ONLY_FLAG)) {
+                continue;
             }
 
-            if(isset($document['header'][self::EXCEPT_FLAG])) {
-                // If all rules pass, then we exclude this document
-                if($this->testRules($document['header'], self::EXCEPT_FLAG)) {
-                    continue;
-                }
+            // If all rules pass, then we exclude this document
+            if($this->testRules($document['header'], self::EXCEPT_FLAG)) {
+                continue;
             }
 
             $filtered[$key] = $document;
@@ -513,8 +519,22 @@ class Yaml
         return $filtered;
     }
 
+    /**
+     * Tests the only except rules for a header.
+     *
+     * @param array $header
+     * @param string $flag
+     *
+     * @return boolean
+     */
     protected function testRules($header, $flag)
     {
+        // If flag is not set, then it has no tests
+        if(!isset($header[$flag])) {
+            // We want only to pass, except to fail
+            return $flag === self::ONLY_FLAG;
+        }
+
         if(!is_array($header[$flag])) {
             throw new Exception(sprintf('\'%s\' statements must be an array', $flag));
         }
