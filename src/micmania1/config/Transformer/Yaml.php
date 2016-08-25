@@ -171,16 +171,9 @@ class Yaml
     {
         $unnamed = $this->splitYamlDocuments();
 
-        if (empty($unnamed)) {
-            return [];
-        }
-
         $documents = [];
         foreach ($unnamed as $uniqueKey => $document) {
-            $header = YamlParser::parse($document['header']);
-            if(!is_array($header)) {
-                $header = [];
-            }
+            $header = YamlParser::parse($document['header']) ?: [];
             $header = array_change_key_case($header, CASE_LOWER);
 
             $content = YamlParser::parse($document['content']);
@@ -284,11 +277,6 @@ class Yaml
         foreach ($documents as $key => $document) {
             $header = $document['header'];
 
-            // If the document doesn't have a name, we'll generate one
-            if (!isset($header['name'])) {
-                $header['name'] = md5($document['filename']).'-'.$key;
-            }
-
             // If our document isn't yet listed in the dependencies we'll add it
             if (!isset($dependencies[$header['name']])) {
                 $dependencies[$header['name']] = [];
@@ -327,31 +315,19 @@ class Yaml
     protected function addDependencies($header, $flag, $dependencies, $documents)
     {
         // If header isn't set then return dependencies
-        if(!isset($header[$flag])) {
+        if(!isset($header[$flag]) || !in_array($flag, [self::BEFORE_FLAG, self::AFTER_FLAG])) {
             return $dependencies;
         }
-        $name = $header['name'];
-        $currentDocument = $header[$flag];
 
         // Normalise our input. YAML accpets string or array values.
-        if (!is_array($currentDocument)) {
-            $currentDocument = [$currentDocument];
+        if (!is_array($header[$flag])) {
+            $header[$flag] = [$header[$flag]];
         }
 
-        foreach ($currentDocument as $dependency) {
-            // Ensure our depdency and current document have dependencies listed
-            if (!isset($dependencies[$name])) {
-                $dependencies[$name] = [];
-            }
-
+        foreach ($header[$flag] as $dependency) {
             // Because wildcards and hashes exist, our 'dependency' might actually match
             // multiple blocks and therefore could be multiple dependencies.
             $matchingDocuments = $this->getMatchingDocuments($dependency, $documents);
-
-            // If we have no matching documents, don't add it to dependecies
-            if (empty($matchingDocuments)) {
-                continue;
-            }
 
             foreach ($matchingDocuments as $document) {
                 $dependencyName = $document['header']['name'];
@@ -361,12 +337,10 @@ class Yaml
 
                 if ($flag == self::AFTER_FLAG) {
                     // For 'after' we add the given dependency to the current document
-                    $dependencies[$name][] = $dependencyName;
-                } elseif ($flag == self::BEFORE_FLAG) {
-                    // For 'before' we add the current document as a dependency to $before
-                    $dependencies[$dependencyName][] = $name;
+                    $dependencies[$header['name']][] = $dependencyName;
                 } else {
-                    throw Exception('Invalid flag set for adding dependency.');
+                    // For 'before' we add the current document as a dependency to $before
+                    $dependencies[$dependencyName][] = $header['name'];
                 }
             }
         }
@@ -466,13 +440,7 @@ class Yaml
      */
     protected function getSortedYamlDocuments()
     {
-        $documents = $this->getNamedYamlDocuments();
-        $documents = $this->filterByOnlyAndExcept($documents);
-
-        if (empty($documents)) {
-            return [];
-        }
-
+        $documents = $this->filterByOnlyAndExcept();
         $dependencies = $this->calculateDependencies($documents);
 
         // Now that we've built up our dependencies, we can pass them into
@@ -495,12 +463,11 @@ class Yaml
      * This filteres out any yaml documents which don't pass their only
      * or except statement tests.
      *
-     * @param array $documents
-     *
      * @return array
      */
-    protected function filterByOnlyAndExcept($documents)
+    protected function filterByOnlyAndExcept()
     {
+        $documents = $this->getNamedYamlDocuments();
         $filtered = [];
         foreach($documents as $key => $document) {
             // If not all rules match, then we exclude this document
