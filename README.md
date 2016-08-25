@@ -9,6 +9,7 @@ understood by many and to improve performance whilst keeping the powerful featur
 
 * [Manifesto](docs/manifesto.md)
 * [Architecture](docs/architecture.md)
+* [Transformers](docs/transformers.md)
 * [Usage](docs/usage.md)
 * [Testing](docs/testing.md)
 * [Glossary](docs/glossary.md)
