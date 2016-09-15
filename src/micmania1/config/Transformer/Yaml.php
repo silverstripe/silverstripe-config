@@ -9,7 +9,7 @@ use MJS\TopSort\Implementations\ArraySort;
 use Exception;
 use Closure;
 
-class Yaml
+class Yaml implements TransformerInterface
 {
     /**
      * @const string
