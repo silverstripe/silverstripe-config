@@ -2,7 +2,7 @@
     "name": "micmania1/config",
     "require": {
         "symfony/finder": "^v3.1.2",
-        "symfony/yaml": "^3.1",
+        "symfony/yaml": "^2.0|^3.1",
         "marcj/topsort": "^1.0"
     },
     "require-dev": {
