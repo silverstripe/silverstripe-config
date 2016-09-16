@@ -14,36 +14,65 @@
 +---------v---------+                                        +------------------+
 |                   |                                        |                  |
 |  YAML Transformer +------->  ->transform() +---------------> PHP config keyed |
-|                   |               +                        |   by priority.   |
+|                   |               ^                        |   by priority.   |
 +-------------------+               |                        |                  |
                                     |                        +------------------+
                                     |
                                     |
-                                    v
+                                    +
                                                        Returns an array of yaml documents
                          ->getSortedYamlDocuments()    ordered by before/after dependencies
+                                    ^
+                                    |
+                                    |
+                                    |
+                                    |
                                     +
-                                    |
-                                    |
-                                    |
-                                    |
-                                    v
                                                        Returns an array of yaml documents
                          ->getNamedYamlDocuments()     keyed by name.
-                                    +
+                                    ^
                                     |
                                     |
                                     |
                                     |
-                                    v                  Filters out any YAML documents which
+                                    +                  Filters out any YAML documents which
                                                        have not passed 'Only' tests or have
                          ->filterByOnlyAndExcept()     failed 'except' tests.
+                                    ^
+                                    |
+                                    |
+                                    |
+                                    |
                                     +
-                                    |
-                                    |
-                                    |
-                                    |
-                                    v
                                                        Uses topsort to resolve dependencies
                          ->calculateDependencies()     based on before/after statements
+```
+
+
+## Private Static Transformer
+```
++--------------------------------+
+|                                |
+|       Array of Classes         |
+| (eg. SilverStripe ClassLoader) |
+|                                |
++---------------+----------------+
+                |
+                |
+                |
+                v                                                    +----------------------+
+ +--------------+---------------+                                    |                      |
+ |                              |                                    |   PHP config keyed   |
+ |  Private static transformer  +----------> transform() +---------->+     by priority.     |
+ |                              |                ^                   |                      |
+ +------------------------------+                |                   +----------------------+
+                                                 |
+                                                 |
+                                                 |
+                                                 |
+                                                 |
+                                                 +
+                                                                    Uses reflection to lookup
+                                          ->getClassConfig()        the private statics of a class
+                                                                    and returns them as an array
 ```
