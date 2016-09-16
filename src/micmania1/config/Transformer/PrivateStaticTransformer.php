@@ -33,7 +33,12 @@ class PrivateStaticTransformer implements TransformerInterface
     {
         $config = [];
         foreach($this->classes as $class) {
-            $config = array_merge($this->getClassConfig($class), $config);
+            // Skip if the class doesn't exist
+            if(!class_exists($class)) {
+                continue;
+            }
+
+            $config[$class] = $this->getClassConfig($class);
         }
 
         return [$this->sort => $config];
@@ -49,18 +54,18 @@ class PrivateStaticTransformer implements TransformerInterface
      */
     protected function getClassConfig($class)
     {
-        // Autoload the class if it exists
-        if(!class_exists($class)) {
-            return [];
-        }
-
         /** @var \ReflectionProperty[] **/
         $props = (new ReflectionClass($class))
-            ->getProperties(ReflectionProperty::IS_STATIC | ReflectionProperty::IS_PRIVATE);
+            ->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
 
         foreach($props as $prop) {
+            if(!$prop->isPrivate()) {
+                // Ignore anything which isn't private
+                continue;
+            }
+
             $prop->setAccessible(true);
             $classConfig[$prop->getName()] = $prop->getValue();
         }
