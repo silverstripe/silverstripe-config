@@ -11,6 +11,11 @@ use micmania1\config\Config;
 use micmania1\config\Transformer\Yaml;
 use Symfony\Component\Finder\Finder;
 
+// Setup Private static transformer
+$classes = ['MyClass', 'MyOtherClass'];
+$privateStatics = new PrivateStaticTransformer($classes, 0)
+
+// Setup YAML Transformer
 $finder = new Finder();
 $finder->in('/path/to/site/*/_config')
     ->files()
@@ -28,7 +33,8 @@ $yaml->addRule('constantdefined', function($const) {
     return defined($const);
 });
 
-$config = new Config($yaml);
+// Pass the transformers into our config class
+$config = new Config($privateStatics, $yaml);
 $merged = $config->transform();
 
 print_r($merged);
