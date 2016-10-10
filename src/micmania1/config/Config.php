@@ -4,18 +4,14 @@ namespace micmania1\config;
 
 use micmania1\config\MergeStrategy\NoKeyConflict;
 use micmania1\config\MergeStrategy\Priority;
+use micmania1\config\Transformer\TransformerInterface;
 
-class Config
+class Config implements TransformerInterface
 {
     /**
      * @var array
      */
     protected $transformers = [];
-
-    /**
-     * @var array
-     */
-    protected $unmerged = [];
 
     /**
      * @var array
@@ -26,7 +22,7 @@ class Config
      * This takes a list of transformaers which are responsible for fetching and tranforming
      * their config into PHP array.
      *
-     * @param Transformer $transformers
+     * @param TransformerInterface $transformers
      */
     public function __construct(...$transformers)
     {
@@ -41,7 +37,6 @@ class Config
      */
     public function transform()
     {
-        $this->unmerged = [];
         $this->merged = [];
 
         if (empty($this->transformers)) {
@@ -50,11 +45,11 @@ class Config
 
         // Each transformer returns config with sorted keys. These are then
         // all merged together into a sorted, but unmerged config.
-        $this->unmerged = $this->transformAndSort();
+        $unmerged = $this->transformAndSort();
 
         // Merge the config by sort order. Now that we have our config ordered
         // by priority we can merge the config together.
-        $this->merged = $this->mergeByPriority($this->unmerged);
+        $this->merged = $this->mergeByPriority($unmerged);
 
         // Return the final merged config
         return $this->merged;
@@ -102,7 +97,7 @@ class Config
      * 	15 => array(...)
      * );
      *
-     * In this example, $mine would be placed in between the 5 and 10 sort keys.
+     * In this example, $mine would be placed in between the 5 and 15 sort keys.
      * $return = array(
      * 	5 => array(...)
      * 	10 => array(...)
@@ -147,7 +142,7 @@ class Config
      */
     protected function mergeUniqueKeys($mine, $theirs)
     {
-        return (new NoKeyConflict())->merge($mine, $theirs);
+        return (new NoKeyConflict)->merge($mine, $theirs);
     }
 
     /**
@@ -162,6 +157,7 @@ class Config
     protected function mergeByPriority($mine, $theirs = [])
     {
         $merged = [];
+
         foreach ($mine as $sort => $block) {
             foreach ($block as $key => $value) {
                 if(!is_array($value)) {
@@ -169,7 +165,7 @@ class Config
                     continue;
                 }
 
-                $merged[$key] = (new Priority())->merge($value, $theirs);
+                $merged[$key] = (new Priority)->merge($value, $theirs);
             }
         }
 

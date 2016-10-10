@@ -95,9 +95,10 @@ class Yaml implements TransformerInterface
      */
     public function transform()
     {
-        $documents = $this->getSortedYamlDocuments();
         $config = [];
         $mergeStrategy = new Priority();
+
+        $documents = $this->getSortedYamlDocuments();
         foreach ($documents as $document) {
             if (!empty($document['content'])) {
                 $config = $mergeStrategy->merge($document['content'], $config);
@@ -159,6 +160,7 @@ class Yaml implements TransformerInterface
     protected function isRuleIgnored($rule)
     {
         $rule = strtolower($rule);
+
         return isset($this->ignoreRules[$rule]);
     }
 
