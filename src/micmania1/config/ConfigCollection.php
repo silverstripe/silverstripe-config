@@ -12,68 +12,17 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     protected $config = [];
 
-    public function __construct($trackMetaData = true, $trackHistory = true)
-    {
-        $this->trackMetaData = (bool) $trackMetaData;
-        $this->trackHistory = (bool) $trackHistory;
-    }
-
     /**
      * {@inheritdoc}
      */
-    public function set($key, $value, $metaData = [])
+    public function set($key, ConfigItemInterface $item)
     {
-        if(!$this->hasKey($key)) {
-
-            // Set a new key
-            $this->config[$key] = [];
-
-            // Setup the defaults, even if metadata/history aren't being used
-            $this->config[$key]['metadata'] = [];
-            $this->config[$key]['history'] = [];
-
-        } else if ($this->trackHistory) {
-
-            // if we're tracking history, we keep a record of the value and metadata
-            $history = [
-                'value' => $this->getValue($key),
-                'metadata' => $this->getMetaData($key)
-            ];
-
-            $this->config[$key]['history'][] = $history;
+        if(!$this->exists($key)) {
+            $this->config[$key] = $item;
         }
 
-        // Overwrite the value for new and existing keys
-        $this->config[$key]['value'] = $value;
-
-        // If we're tracking meta data, update the meta data for new and existing keys
-        if($this->trackMetaData) {
-            $this->config[$key]['metadata'] = $metaData;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getValue($key)
-    {
-        if(!$this->hasKey($key)) {
-            return null;
-        }
-
-        return $this->config[$key]['value'];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMetaData($key)
-    {
-        if(!$this->hasKey($key)) {
-            return null;
-        }
-
-        return $this->config[$key]['metadata'];
+        $existing = $this->config[$key];
+        $existing->set($item->getValue(), $item->getMetaData());
     }
 
     /**
@@ -81,7 +30,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function get($key)
     {
-        if(!$this->hasKey($key)) {
+        if(!$this->exists($key)) {
             return null;
         }
 
@@ -91,25 +40,7 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function clear($key)
-    {
-        if($this->hasKey($key)) {
-            unset($this->config[$key]);
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getKeys()
-    {
-        return array_keys($this->config);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function hasKey($key)
+    public function exists($key)
     {
         return array_key_exists($key, $this->config);
     }
@@ -117,12 +48,26 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function getHistory($key)
+    public function clear($key)
     {
-        if(!$this->hasKey($key)) {
-            return [];
+        if($this->exists($key)) {
+            unset($this->config[$key]);
         }
+    }
 
-        return $this->config[$key]['history'];
+    /**
+     * {@inheritdoc}
+     */
+    public function keys()
+    {
+        return array_keys($this->config);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function all()
+    {
+        return $this->config;
     }
 }

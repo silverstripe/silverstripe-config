@@ -2,73 +2,53 @@
 
 use PHPUnit\Framework\TestCase;
 use micmania1\config\ConfigCollection;
+use micmania1\config\ConfigItem;
+use micmania1\config\ConfigItemInterface;
 
 class ConfigCollectionTest extends TestCase
 {
-    public function testSettingAndGettingValues()
+    private $prophet;
+
+    protected function setUp()
     {
-        $collection = new ConfigCollection();
-
-        $collection->set('test1', 'value1');
-        $collection->set('test2', ['test2' => 'test2']);
-
-        $this->assertTrue($collection->hasKey('test1'));
-        $this->assertEquals($collection->getValue('test1'), 'value1');
-        $this->assertEquals($collection->getValue('test2'), ['test2' => 'test2']);
-
-        // Test a key which doesn't exist
-        $this->assertFalse($collection->hasKey('none'));
-        $this->assertNull($collection->getValue('none'));
-
-        // Test getValues returns the correct keys
-        $this->assertEquals($collection->getKeys(), ['test1', 'test2']);
+        $this->prophet = new \Prophecy\Prophet;
     }
 
-
-    public function testGetAll()
+    public function testCollection()
     {
         $collection = new ConfigCollection;
 
-        $metaData = ['filename' => 'filename1'];
-        $collection->set('test1', 'value1', $metaData);
+        $item = $this->createMockItem('test');
+        $collection->set('test', $item);
 
-        $this->assertEquals($collection->getMetaData('test1'), $metaData);
+        $this->assertTrue($collection->exists('test'));
+        $this->assertInstanceOf(ConfigItemInterface::class, $collection->get('test'));
+        $this->assertEquals(['test'], $collection->keys());
+        $this->assertCount(1, $collection->all());
 
-        // Test everything
-        $all = ['value' => 'value1', 'metadata' => $metaData, 'history' => []];
-        $this->assertEquals($collection->get('test1'), $all);
+        $item2 = $this->createMockItem('test2');
+        $collection->set('test2', $item2);
 
-        // Test something that doesn't exist
-        $this->assertNull($collection->getMetaData('none'));
-        $this->assertNull($collection->get('none'));
+        $this->assertTrue($collection->exists('test2'));
+        $this->assertInstanceOf(ConfigItemInterface::class, $collection->get('test2'));
+        $this->assertEquals(['test', 'test2'], $collection->keys());
+        $this->assertCount(2, $collection->all());
+
+        $collection->clear('test');
+        $this->assertFalse($collection->exists('test'));
+        $this->assertNull($collection->get('test'));
+        $this->assertCount(1, $collection->all());
     }
 
-    public function testClear()
+    private function createMockItem($value, $metaData = [])
     {
-        $collection = new ConfigCollection;
+        $item = $this->prophet->prophesize(ConfigItemInterface::class);
 
-        $collection->set('test1', 'value1');
-        $this->assertTrue($collection->hasKey('test1'));
+        // Expected method calls
+        $item->getValue()->willReturn($value);
+        $item->getMetaData()->willReturn($metaData);
+        $item->set($value, $metaData)->willReturn(null);
 
-        $collection->clear('test1');
-        $this->assertFalse($collection->hasKey('test1'));
+        return $item->reveal();
     }
-
-    public function testHistory()
-    {
-        $collection = new ConfigCollection;
-
-        $collection->set('test1', 'value1');
-
-        // History should be empty on the first run
-        $this->assertEquals($collection->getHistory('test1'), []);
-
-        // Now we set the same key again and the history changes.
-        $collection->set('test1', 'value2');
-        $history = [
-            ['value' => 'value1', 'metadata' => []]
-        ];
-        $this->assertEquals($collection->getHistory('test1'), $history);
-    }
-
 }

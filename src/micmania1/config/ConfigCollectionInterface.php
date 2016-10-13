@@ -11,37 +11,27 @@ interface ConfigCollectionInterface
      * Set the value of a single item
      *
      * @param string $kay
-     * @param string|bool|array $value
-     * @param array $metaData
+     * @param ConfigItemInterface $item
      */
-    public function set($key, $value, $metaData = []);
-
-    /**
-     * Get a single config key value
-     *
-     * @param string $key
-     *
-     * @return string|bool|array|null - null when no value is found
-     */
-    public function getValue($key);
-
-    /**
-     * Returns meta data about this key (eg. where it came from).
-     *
-     * @param string $key
-     *
-     * @todo decide what this actually returns. Structured vs array
-     */
-    public function getMetaData($key);
+    public function set($key, ConfigItemInterface $item);
 
     /**
      * Fetches value and metadata for everything we have set
      *
      * @param string $key
      *
-     * @todo decide return value
+     * @return ConfigItemInterface|null
      */
     public function get($key);
+
+    /**
+     * Checks to see if a config item exists
+     *
+     * @param string $key
+     *
+     * @return boolean
+     */
+    public function exists($key);
 
     /**
      * Removed a config item including any associated metadata
@@ -55,14 +45,12 @@ interface ConfigCollectionInterface
      *
      * @return string[]
      */
-    public function getKeys();
+    public function keys();
 
     /**
-     * Returns an array of value/metadata for a key in descing order by time added
-     *
-     * @param string $key
+     * Fetches all config items
      *
      * @return array
      */
-    public function getHistory($ket);
+    public function all();
 }
