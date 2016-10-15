@@ -7,8 +7,7 @@ use micmania1\config\ConfigCollection;
 
 class Priority
 {
-    public function merge(ConfigCollectionInterface $mine, ConfigCollectionInterface $theirs)
-    {
+    public function merge(ConfigCollectionInterface $mine, ConfigCollectionInterface $theirs) {
         foreach ($mine->all() as $key => $item) {
             // If the item doesn't exist in theirs, we can just set it and continue.
             if(!$theirs->exists($key)) {
@@ -23,16 +22,13 @@ class Priority
             $lessImportantValue = $theirsItem->getValue();
             $importantValue = $item->getValue();
 
-            // Set the default value
-            $value = $importantValue;
-
             // If its an array and the key already esists, we can use array_merge
             if (is_array($importantValue) && is_array($lessImportantValue)) {
-                $value = array_merge($lessImportantValue, $importantValue);
+                $importantValue = array_merge($lessImportantValue, $importantValue);
             }
 
             // The key is not set or the value is to be overwritten
-            $theirsItem->set($value, $item->getMetaData());
+            $theirsItem->set($importantValue, $item->getMetaData());
         }
 
         return $theirs;

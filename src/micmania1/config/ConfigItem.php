@@ -22,25 +22,27 @@ class ConfigItem implements ConfigItemInterface
     /**
      * @var boolean
      */
-    protected $trackHistory = true;
+    protected $trackMetadata = false ;
 
-    public function __construct($value, array $metaData = [], $trackHistory = true)
+    public function __construct($value, array $metaData = [], $trackMetadata = false)
     {
         $this->value = $value;
-        $this->metaData = $metaData;
-        $this->trackHistory = (boolean) $trackHistory;
+        $this->trackMetadata = (boolean) $trackMetadata;
+        if($this->trackMetadata) {
+            $this->metaData = $metaData;
+        }
     }
 
     public function set($value, $metaData = [])
     {
-        if($this->trackHistory) {
+        if($this->trackMetadata) {
             // Clone will clear the history to prevent recursion
             $previous = clone $this;
-            $this->history[] = $previous;
+            array_unshift($this->history, $previous);
+            $this->metaData = $metaData;
         }
 
         $this->value = $value;
-        $this->metaData = $metaData;
     }
 
     /**
@@ -54,7 +56,7 @@ class ConfigItem implements ConfigItemInterface
     /**
      * @return array
      */
-    public function getMetaData()
+    public function getMetadata()
     {
         return $this->metaData;
     }
@@ -67,6 +69,11 @@ class ConfigItem implements ConfigItemInterface
     public function getHistory()
     {
         return $this->history;
+    }
+
+    public function trackMetadata($track)
+    {
+        $this->trackMetadata = $track;
     }
 
     /**

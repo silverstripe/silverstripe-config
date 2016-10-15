@@ -12,15 +12,14 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     protected $config = [];
 
-    public function __construct(array $config = [])
-    {
-        foreach($config as $key => $item) {
-            if(!($item instanceof ConfigItemInterface)) {
-                $item = new ConfigItem($item);
-            }
+    /**
+     * @var boolean
+     */
+    protected $trackMetadata = false;
 
-            $this->config[$key] = $item;
-        }
+    public function __construct($trackMetadata = false)
+    {
+        $this->trackMetadata = $trackMetadata;
     }
 
     /**
@@ -28,16 +27,17 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function set($key, $item)
     {
-        if(!($item instanceof ConfigItemInterface)) {
-            $item = new ConfigItem($item);
-        }
-
         if(!$this->exists($key)) {
             $this->config[$key] = $item;
         }
 
+        // Get the existing item so we can set the new value on it
         $existing = $this->config[$key];
-        $existing->set($item->getValue(), $item->getMetaData());
+
+        // Ensure that that tracking is correct for items belonging to this collection
+        $existing->trackMetadata($this->trackMetadata);
+
+        $existing->set($item->getValue(), $item->getMetadata());
     }
 
     /**

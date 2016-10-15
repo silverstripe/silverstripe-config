@@ -8,9 +8,9 @@ interface ConfigItemInterface
      * Set the value and meta data
      *
      * @param mixed $value
-     * @param array $metaData
+     * @param array $metadata
      */
-    public function set($value, $metaData = []);
+    public function set($value, $metadata = []);
 
     /**
      * Get the value of a config item
@@ -24,7 +24,7 @@ interface ConfigItemInterface
      *
      * @return array
      */
-    public function getMetaData();
+    public function getMetadata();
 
     /**
      * Fetch the item history ordered in descending order by data
@@ -32,4 +32,11 @@ interface ConfigItemInterface
      * @return CollectionItemInterface[]
      */
     public function getHistory();
+
+    /**
+     * Set whether to track history
+     *
+     * @param bool
+     */
+    public function trackMetadata($track);
 }

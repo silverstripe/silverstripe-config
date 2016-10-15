@@ -11,7 +11,7 @@ interface ConfigCollectionInterface
      * Set the value of a single item
      *
      * @param string $key
-     * @param ConfigItemInterface|array $item
+     * @param ConfigItemInterface $item
      */
     public function set($key, $item);
 
