@@ -11,7 +11,7 @@ use MJS\TopSort\Implementations\ArraySort;
 use Exception;
 use Closure;
 
-class Yaml implements TransformerInterface
+class YamlTransformer implements TransformerInterface
 {
     /**
      * @const string

@@ -1,6 +1,6 @@
 <?php
 
-use micmania1\config\Transformer\Yaml as YamlTransformer;
+use micmania1\config\Transformer\YamlTransformer;
 use micmania1\config\ConfigCollection;
 use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
