@@ -3,6 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use micmania1\config\MergeStrategy\NoKeyConflict;
 use micmania1\config\Exceptions\KeyConflictException;
+use micmania1\config\ConfigCollection;
 
 class NoKeyConflictTest extends TestCase
 {
@@ -18,55 +19,46 @@ class NoKeyConflictTest extends TestCase
 
     public function testBasicKeyClash()
     {
-        // First we try to add a basic key/value`
-        $config = $this->strategy->merge(['test' => 'test'], []);
-        $this->assertEquals(['test' => 'test'], $config);
+        $theirs = new ConfigCollection([]);
 
-        // Now we try to add the same key/value again. This should not trigger an error
-        // as we're not attempting to change the value, but it should not affect $config
-        $config = $this->strategy->merge(['test' => 'test'], $config);
-        $this->assertEquals(['test' => 'test'], $config);
+        // First we try to add a basic key/value`
+        $mine = new ConfigCollection(['test' => 'test']);
+        $this->strategy->merge($mine, $theirs);
+        $this->assertEquals('test', $theirs->get('test')->getValue());
 
         // No we'll try to add a different key
-        $config = $this->strategy->merge(['newkey' => 'newvalue'], $config);
-        $this->assertEquals(['test' => 'test', 'newkey' => 'newvalue'], $config);
+        $mine = new ConfigCollection(['newkey' => 'newvalue']);
+        $this->strategy->merge($mine, $theirs);
+        $this->assertEquals(['test', 'newkey'], $theirs->keys());
 
         // Now we'll try to add the same key witha different value and it should fail.
         $this->expectException(KeyConflictException::class);
-        $config = $this->strategy->merge(['test' => 'modified'], $config);
+        $mine = new ConfigCollection(['test' => 'this key should cause a conflict']);
+        $config = $this->strategy->merge($mine, $theirs);
     }
 
-    public function testAssocArrayKeyClash()
+    public function testStringKeyClash()
     {
-        $base = [
-            'myarray' => [
-                'test' => 'value',
-            ],
-        ];
+        $theirs = new ConfigCollection(['myarray' => ['test' => 'value']]);
 
         // First we'll ensure top level keys don't affect lower level keys
-        $config = $this->strategy->merge(['test' => 'value'], $base);
-        $expected = $base;
-        $expected['test'] = 'value';
-        $this->assertEquals($expected, $config);
+        $mine = new ConfigCollection(['test' => 'value']);
+        $config = $this->strategy->merge($mine, $theirs);
+        $this->assertEquals(['test' => 'value'], $theirs->get('myarray')->getValue());
 
         // Now we'll mere a new key to our existing array
-        $config = $this->strategy->merge(['myarray' => ['newkey' => 'newvalue']], $base);
-        $expected = $base;
-        $expected['myarray']['newkey'] = 'newvalue';
-        $this->assertEquals($expected, $config);
+        $mine = new ConfigCollection(['myarray' => ['newkey' => 'newvalue']]);
+        $config = $this->strategy->merge($mine, $theirs);
+        $expected = ['test' => 'value', 'newkey' => 'newvalue'];
+        $this->assertEquals($expected, $theirs->get('myarray')->getValue());
 
-        // Now we'll test overwriting a deep key with the same value
-        // This should also work fine as there's no change
-        $config = $this->strategy->merge(['myarray' => ['test' => 'value']], $base);
-        $this->assertEquals($base, $config);
-
-        // Now we'll test overwriting a deep key with a different value where it should break
+        // // Now we'll test overwriting a deep key with a different value where it should break
         $this->expectException(KeyConflictException::class);
-        $config = $this->strategy->merge(['myarray' => ['test' => 'modified']], $base);
+        $mine = new ConfigCollection(['myarray' => ['test' => 'modified']]);
+        $config = $this->strategy->merge($mine, $theirs);
     }
 
-    public function testArrayKeyClash()
+    public function testNumericKeyClash()
     {
         $base = [
             0 => 'test',
@@ -75,23 +67,23 @@ class NoKeyConflictTest extends TestCase
                 3 => 'test',
             ],
         ];
+        $theirs = new ConfigCollection($base);
 
         // New key, no clash
-        $config = $this->strategy->merge([2 => 'test'], $base);
-        $expected = $base;
-        $expected[2] = 'test';
-        $this->assertEquals($expected, $config);
+        $mine = new ConfigCollection([2 => 'test']);
+        $this->strategy->merge($mine, $theirs);
+        $this->assertEquals([0, 1, 2], $theirs->keys());
 
         // Same value so no clash
-        $config = $this->strategy->merge([0 => 'test'], $base);
-        $expected = $base;
-        $expected[0] = 'test';
-        $this->assertEquals($expected, $config);
+        $mine = new ConfigCollection([0 => 'test']);
+        $this->strategy->merge($mine, $theirs);
+        $this->assertEquals([0, 1, 2], $theirs->keys());
 
         // Test a clash in the top level of the array
         $thrown = false;
         try {
-            $config = $this->strategy->merge([1 => 'test'], $base);
+            $mine = new ConfigCollection([1 => 'test']);
+            $config = $this->strategy->merge($mine, $theirs);
         } catch (KeyConflictException $e) {
             $thrown = true;
         } finally {
@@ -101,7 +93,8 @@ class NoKeyConflictTest extends TestCase
         // Test a clash in the second level of the array
         $thrown = false;
         try {
-            $config = $this->strategy->merge([1 => [2 => 'modified']], $base);
+            $mine = new ConfigCollection([1 => [2 => 'modified']]);
+            $config = $this->strategy->merge($mine, $theirs);
         } catch (KeyConflictException $e) {
             $thrown = true;
         } finally {

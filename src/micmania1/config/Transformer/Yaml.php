@@ -3,6 +3,8 @@
 namespace micmania1\config\Transformer;
 
 use micmania1\config\MergeStrategy\Priority;
+use micmania1\config\ConfigCollectionInterface;
+use micmania1\config\ConfigCollection;
 use Symfony\Component\Yaml\Yaml as YamlParser;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
@@ -46,9 +48,9 @@ class Yaml implements TransformerInterface
     protected $documents = [];
 
     /**
-     * @var int
+     * @var ConfigCollectionInterface
      */
-    protected $sort;
+    protected $collection;
 
     /**
      * Base directory used to find yaml files.
@@ -74,12 +76,12 @@ class Yaml implements TransformerInterface
     /**
      * @param string $baseDir directory to scan for yaml files
      * @param Finder $finder
-     * @param int $sort
+     * @param ConfigCollectionInterface $collection
      */
-    public function __construct($baseDir, Finder $finder, $sort = 0)
+    public function __construct($baseDir, Finder $finder, ConfigCollectionInterface $collection)
     {
         $this->baseDirectory = $baseDir;
-        $this->sort = $sort;
+        $this->collection = $collection;
 
         foreach ($finder as $file) {
             $this->files[$file->getPathname()] = $file->getPathname();
@@ -91,21 +93,21 @@ class Yaml implements TransformerInterface
      * that Config can understand. Config will then be responsible for turning thie
      * output into the final merged config.
      *
-     * @return array
+     * @return ConfigCollectionInterface
      */
     public function transform()
     {
-        $config = [];
         $mergeStrategy = new Priority();
 
         $documents = $this->getSortedYamlDocuments();
         foreach ($documents as $document) {
             if (!empty($document['content'])) {
-                $config = $mergeStrategy->merge($document['content'], $config);
+                $tmpCollection = new ConfigCollection($document['content']);
+                $mergeStrategy->merge($tmpCollection, $this->collection);
             }
         }
 
-        return [$this->sort => $config];
+        return $this->collection;
     }
 
     /**

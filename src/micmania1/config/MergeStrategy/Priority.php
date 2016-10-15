@@ -2,20 +2,37 @@
 
 namespace micmania1\config\MergeStrategy;
 
+use micmania1\config\ConfigCollectionInterface;
+use micmania1\config\ConfigCollection;
+
 class Priority
 {
-    public function merge($mine, $theirs = [])
+    public function merge(ConfigCollectionInterface $mine, ConfigCollectionInterface $theirs)
     {
-        foreach ($mine as $key => $value) {
-            // If its an array and the key already esists, we can use array_merge
-            if (is_array($value) && array_key_exists($key, $theirs)) {
-                $theirs[$key] = array_merge($theirs[$key], $value);
-
+        foreach ($mine->all() as $key => $item) {
+            // If the item doesn't exist in theirs, we can just set it and continue.
+            if(!$theirs->exists($key)) {
+                $theirs->set($key, $item);
                 continue;
             }
 
+            /** @var ConfigItemInterface **/
+            $theirsItem = $theirs->get($key);
+
+            // Get the two values for comparison
+            $lessImportantValue = $theirsItem->getValue();
+            $importantValue = $item->getValue();
+
+            // Set the default value
+            $value = $importantValue;
+
+            // If its an array and the key already esists, we can use array_merge
+            if (is_array($importantValue) && is_array($lessImportantValue)) {
+                $value = array_merge($lessImportantValue, $importantValue);
+            }
+
             // The key is not set or the value is to be overwritten
-            $theirs[$key] = $value;
+            $theirsItem->set($value, $item->getMetaData());
         }
 
         return $theirs;

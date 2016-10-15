@@ -1,6 +1,7 @@
 <?php
 
 use micmania1\config\Transformer\PrivateStaticTransformer;
+use micmania1\config\ConfigCollection;
 use PHPUnit\Framework\TestCase;
 
 class PrivateStaticTransformerTest extends TestCase
@@ -12,18 +13,29 @@ class PrivateStaticTransformerTest extends TestCase
     public function testLookup()
     {
         $classes = [PrivateStaticTransformerTest_ClassA::class];
-        $transformer = new PrivateStaticTransformer($classes);
+        $collection = new ConfigCollection;
+        $transformer = new PrivateStaticTransformer($classes, $collection);
 
-        $expected = [0 => [
-            PrivateStaticTransformerTest_ClassA::class => [
-                'myString' => 'value',
-                'myArray' => [
-                    'myThing' => 'myValue',
-                    0 => 'myOtherThing',
-                ],
+        $transformer->transform();
+
+        // Asert that keys match
+        $this->assertEquals(
+            [PrivateStaticTransformerTest_ClassA::class],
+            $collection->keys()
+        );
+
+        // Assert that the value matches
+        $expected = [
+            'myString' => 'value',
+            'myArray' => [
+                'myThing' => 'myValue',
+                0 => 'myOtherThing',
             ],
-        ]];
-        $this->assertEquals($expected, $transformer->transform());
+        ];
+        $this->assertEquals(
+            $expected,
+            $collection->get(PrivateStaticTransformerTest_ClassA::class)->getValue()
+        );
     }
 
     /**
@@ -35,25 +47,34 @@ class PrivateStaticTransformerTest extends TestCase
             PrivateStaticTransformerTest_ClassA::class,
             PrivateStaticTransformerTest_ClassB::class,
         ];
-        $transformer = new PrivateStaticTransformer($classes);
+        $collection = new ConfigCollection;
+        $transformer = new PrivateStaticTransformer($classes, $collection);
 
-        $expected = [0 => [
-            PrivateStaticTransformerTest_ClassA::class => [
-                'myString' => 'value',
-                'myArray' => [
-                    'myThing' => 'myValue',
-                    0 => 'myOtherThing',
-                ],
+        $transformer->transform();
+
+        $expectedA = [
+            'myString' => 'value',
+            'myArray' => [
+                'myThing' => 'myValue',
+                0 => 'myOtherThing',
             ],
-            PrivateStaticTransformerTest_ClassB::class => [
-                'myString' => 'my other string',
-                'myArray' => [
-                    0 => 'test1',
-                    1 => 'test2',
-                ],
+        ];
+
+        $expectedB = [
+            'myString' => 'my other string',
+            'myArray' => [
+                0 => 'test1',
+                1 => 'test2',
             ],
-        ]];
-        $this->assertEquals($expected, $transformer->transform());
+        ];
+
+        $this->assertEquals($classes, $collection->keys());
+
+        $classA = PrivateStaticTransformerTest_ClassA::class;
+        $classB = PrivateStaticTransformerTest_ClassB::class;
+
+        $this->assertEquals($expectedA, $collection->get($classA)->getValue());
+        $this->assertEquals($expectedB, $collection->get($classB)->getValue());
     }
 
     /**
@@ -63,11 +84,13 @@ class PrivateStaticTransformerTest extends TestCase
     {
         $class = 'SomeNonExistentClass';
         if(class_exists($class)) {
-            $this->markTestSkipped($class . ' exists but the test expects it not to');
+            $this->markTestSkipped($class . ' exists but the test expects it not to.');
         }
 
-        $config = (new PrivateStaticTransformer([$class]))->transform();
-        $this->assertEquals([0 => []], $config);
+        $collection = new ConfigCollection;
+        $transformer = new PrivateStaticTransformer([$class], $collection);
+        $transformer->transform();
+        $this->assertEquals([], $collection->keys());
     }
 
 }
