@@ -1,75 +1,59 @@
 # Architecture
 
-Configuration can come in many different formats. Each supported format has a related Transformer which is responsible for taking the config in its original format and outputting it in a format understood by the Config class.
+Configuration can come in many different formats. Each supported format has a related Transformer which is responsible for taking the config in its original format and merging it into an instance of `ConfigCollectionInterface`. 
 
-When provided with transformers the Config instance will call the ->transform() method on each. This returns an array with a single key representing the transformers priority and value containing the config for that transformer. All transformers are then merged in order of priority into the final merged PHP array.
+## Config Collection
 
-## Transformer Output
+The merged config is an instance of `ConfigCollectionInterface` which is made up of many `ConfigItemInterface`'s.
 
-The format accepted by the Config class and output bu the transformer is as follows:
+As the config collection is passed through transformers, its content is updated with new `ConfigItem`'s containing the value of a given key as well as some meta data about where the key came from. This metadata includes the tranformer which updates the value of the key and where the key came from.
 
-```
-// Transformer 1
-array(
-    10 => array(
-        'MyConfig1' => 'value',
-        'MyConfig2' => 'othervalue'
-    )
-)
+## Merge Priority
 
-// Transformer 2
-array(
-    20 => array(
-        'MyConfig2' => 'overwritten'
-    )
-)
-```
-
-The numbers 10 and 20 represent the priority of the transformer's config and is used to sort in relation to other transformers. In the above example, MyConfig2's value would become 'overwritten' as that config has higher priority (20) then the first (10). Having separations between each key allows for transformers to be insert into any location later on.
-
-## Final Merged Configuration
-
-The final configuration is a result of all transformers merged together:
-
-```
-array(
-    'MyConfig1' => 'value',
-    'MyConfig2' => 'overwritten'
-)
-```
+The priority in which transformers are merged is implied by the order in which `->transform()` is called on each transformer. The lower priority items are called first and may be overwritten by later transformations.
 
 ## Data Flow
 
-The entire flow of data is shown below:
+The data flow is shown below:
 
 ```
-+---------------+   +---------------+   +---------------+
-|               |   |               |   |               |
-| Transformer 1 |   | Transformer 2 |   | Transformer 3 |
-|               |   |               |   |               |
-+-------+-------+   +-------+-------+   +-------+-------+
-        |                   |                   |
-        |                   |                   |
-        |                   |                   |
-        |           +-------v-------+           |
-        |           |               |           |
-        +----------->    Config     <-----------+
-                    |               |
-                    +-------+-------+
-                            |
-                            |
-                            |
-                    +-------v-------+
-                    |               |
-                    |   Transform   |
-                    |               |
-                    +-------+-------+
-                            |
-                            |
-                            |
-                    +-------v-------+
-                    |  Merged PHP   |
-                    |     array     |
-                    |               |
-                    +---------------+
+           +-----------------+
+           |                 |
+           |      Config     |
+           |    Collection   |
+           |                 |
+           +--------+--------+
+                    |
+                    |
+                    v
++-------------------+--------------------+
+|                                        |
+|             Transformer 1              |
+|                                        |
++-------------------+--------------------+
+                    |
+                    |
+                    v
++-------------------+--------------------+
+|                                        |
+|             Transformer 2              |
+|                                        |
++-------------------+--------------------+
+                    |
+                    |
+                    v
++-------------------+--------------------+
+|                                        |
+|             Transformer 3              |
+|                                        |
++-------------------+--------------------+
+                    |
+                    |
+                    v
+           +--------+--------+
+           |                 |
+           |      Config     |
+           |    Collection   |
+           |                 |
+           +-----------------+
 ```
