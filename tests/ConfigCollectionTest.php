@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 use micmania1\config\ConfigCollection;
-use micmania1\config\ConfigItemInterface;
+use micmania1\config\ConfigItem;
 use Prophecy\Prophet;
 
 class ConfigCollectionTest extends TestCase
@@ -18,19 +18,17 @@ class ConfigCollectionTest extends TestCase
     {
         $collection = new ConfigCollection;
 
-        $item = $this->createMockItem('test');
+        $item = new ConfigItem('value');
         $collection->set('test', $item);
 
         $this->assertTrue($collection->exists('test'));
-        $this->assertInstanceOf(ConfigItemInterface::class, $collection->get('test'));
         $this->assertEquals(['test'], $collection->keys());
         $this->assertCount(1, $collection->all());
 
-        $item2 = $this->createMockItem('test2');
+        $item2 = new ConfigItem('value');
         $collection->set('test2', $item2);
 
         $this->assertTrue($collection->exists('test2'));
-        $this->assertInstanceOf(ConfigItemInterface::class, $collection->get('test2'));
         $this->assertEquals(['test', 'test2'], $collection->keys());
         $this->assertCount(2, $collection->all());
 
@@ -40,21 +38,4 @@ class ConfigCollectionTest extends TestCase
         $this->assertCount(1, $collection->all());
     }
 
-    /**
-     * This creates a mock ConfigItermInterface
-     *
-     * @param mixed $value
-     * @param array $metaData
-     */
-    private function createMockItem($value, $metaData = [])
-    {
-        $item = $this->prophet->prophesize(ConfigItemInterface::class);
-
-        // Expected method calls
-        $item->getValue()->willReturn($value);
-        $item->getMetaData()->willReturn($metaData);
-        $item->set($value, $metaData)->willReturn(null);
-
-        return $item->reveal();
-    }
 }
