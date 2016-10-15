@@ -10,10 +10,10 @@ interface ConfigCollectionInterface
     /**
      * Set the value of a single item
      *
-     * @param string $kay
-     * @param ConfigItemInterface $item
+     * @param string $key
+     * @param ConfigItemInterface|array $item
      */
-    public function set($key, ConfigItemInterface $item);
+    public function set($key, $item);
 
     /**
      * Fetches value and metadata for everything we have set

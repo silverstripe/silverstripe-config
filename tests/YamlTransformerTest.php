@@ -1,6 +1,7 @@
 <?php
 
 use micmania1\config\Transformer\Yaml as YamlTransformer;
+use micmania1\config\ConfigCollection;
 use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
 use Symfony\Component\Finder\Finder;
@@ -27,6 +28,9 @@ class YamlTransformerTest extends TestCase
         $this->root = vfsStream::setup();
     }
 
+    /**
+     * @return Finder
+     */
     protected function getFinder()
     {
         return (new Finder())
@@ -73,10 +77,15 @@ class YamlTransformerTest extends TestCase
     {
         file_put_contents($this->getFilePath('empty.yml'), '');
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $this->assertEquals([10 => []], $config);
+        $this->assertEquals([], $collection->all());
     }
 
     /**
@@ -92,14 +101,19 @@ name: 'test'
 YAML;
         file_put_contents($this->getFilePath('emptydoc.yml'), $header);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $this->assertEquals([10 => []], $config);
+        $this->assertEquals([], $collection->all());
 
         // Now we'll test the same thing again, but the empty document will be mid-file
         $content = <<<'YAML'
-first: test
+first: firstValue
 
 ---
 name: second
@@ -108,19 +122,26 @@ name: second
 ---
 name: third
 ---
-third: test
+third: thirdValue
 YAML;
 
         file_put_contents($this->getFilePath('config2.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
         $expected = [
-            'first' => 'test',
-            'third' => 'test',
+            'first' => 'firstValue',
+            'third' => 'thirdValue',
         ];
-        $this->assertEquals([10 => $expected], $config);
+        $this->assertEquals(['first', 'third'], $collection->keys());
+        $this->assertEquals('firstValue', $collection->get('first')->getValue());
+        $this->assertEquals('thirdValue', $collection->get('third')->getValue());
     }
 
     /**
@@ -142,25 +163,26 @@ YAML;
         $file = $this->getFilePath('config.yml');
         file_put_contents($file, $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
         $expected = [
-            10 => [
-                'MyConfig' => [
-                    'test' => 'test',
-                    'assoc' => [
-                        'test' => 'assoctest',
-                    ],
-                    'array' => [
-                        0 => 'arraytest1',
-                        1 => 'arraytest2',
-                    ],
-                ],
+            'test' => 'test',
+            'assoc' => [
+                'test' => 'assoctest',
+            ],
+            'array' => [
+                0 => 'arraytest1',
+                1 => 'arraytest2',
             ],
         ];
 
-        $this->assertEquals($expected, $config);
+        $this->assertEquals($expected, $collection->get('MyConfig')->getValue());
     }
 
     /**
@@ -177,16 +199,15 @@ Test: blah
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $expected = [
-            10 => [
-                'Test' => 'blah',
-            ],
-        ];
-
-        $this->assertEquals($expected, $config);
+        $this->assertEquals('blah', $collection->get('Test')->getValue());
     }
 
     /**
@@ -221,15 +242,15 @@ test: 'set first'
 YAML;
         file_put_contents($this->getFilePath('zzz.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $expected = [
-            10 => [
-                'test' => 'overwritten',
-            ],
-        ];
-        $this->assertEquals($expected, $config);
+        $this->assertEquals('overwritten', $collection->get('test')->getValue());
     }
 
     /**
@@ -252,15 +273,15 @@ test: 'overwritten'
 YAML;
         file_put_contents($this->getFilePath('first.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $expected = [
-            10 => [
-                'test' => 'actualvalue',
-            ],
-        ];
-        $this->assertEquals($expected, $config);
+        $this->assertEquals('actualvalue', $collection->get('test')->getValue());
     }
 
     /**
@@ -287,15 +308,15 @@ YAML;
         mkdir($this->getConfigDirectory().'/test2');
         file_put_contents($this->getFilePath('test2/config.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $expected = [
-            10 => [
-                'test' => 'test',
-            ],
-        ];
-        $this->assertEquals($expected, $config);
+        $this->assertEquals('test', $collection->get('test')->getValue());
 
         $content = <<<'YAML'
 ---
@@ -306,15 +327,15 @@ test: 'overwrite'
 YAML;
         file_put_contents($this->getFilePath('test2/config.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
-        $config = $transformer->transform();
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
+        $transformer->transform();
 
-        $expected = [
-            10 => [
-                'test' => 'overwrite',
-            ],
-        ];
-        $this->assertEquals($expected, $config);
+        $this->assertEquals('overwrite', $collection->get('test')->getValue());
     }
 
     /**
@@ -339,7 +360,12 @@ test: test
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $transformer = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
 
         $this->expectException(CircularDependencyException::class);
         $transformer->transform();
@@ -374,14 +400,18 @@ test: 'not applied'
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $yaml = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
         $yaml->addRule('testcase', function() {
             return true;
         });
-        $merged = $yaml->transform();
+        $yaml->transform();
 
-        $expected = [10 => ['test' => 'overwritten']];
-        $this->assertEquals($expected, $merged);
+        $this->assertEquals('overwritten', $collection->get('test')->getValue());
     }
 
     /**
@@ -415,17 +445,21 @@ test: 'not applied'
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $yaml = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
         $yaml->addRule('testcase1', function() {
             return true;
         });
         $yaml->addRule('testcase2', function() {
             return true;
         });
-        $merged = $yaml->transform();
+        $yaml->transform();
 
-        $expected = [10 => ['test' => 'overwritten']];
-        $this->assertEquals($expected, $merged);
+        $this->assertEquals('overwritten', $collection->get('test')->getValue());
     }
 
     /**
@@ -465,17 +499,22 @@ test2: test2
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $yaml = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
         $yaml->addRule('testcase1', function() {
             return false;
         });
         $yaml->addRule('testcase2', function() {
             return true;
         });
-        $merged = $yaml->transform();
+        $yaml->transform();
 
-        $expected = [10 => ['test' => 'overwritten', 'test2' => 'test2']];
-        $this->assertEquals($expected, $merged);
+        $this->assertEquals('overwritten', $collection->get('test')->getValue());
+        $this->assertEquals('test2', $collection->get('test2')->getValue());
     }
 
     public function testIgnoredOnlyExceptRule()
@@ -495,15 +534,20 @@ test2: 'test2'
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $yaml = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
         $yaml->addRule('testcase', function() {
             return false;
         });
         $yaml->ignoreRule('testcase');
-        $merged = $yaml->transform();
+        $yaml->transform();
 
-        $expected = [10 => ['test1' => 'test1', 'test2' => 'test2']];
-        $this->assertEquals($expected, $merged);
+        $this->assertEquals('test1', $collection->get('test1')->getValue());
+        $this->assertEquals('test2', $collection->get('test2')->getValue());
     }
 
     public function testKeyValueOnlyExceptStatements()
@@ -541,7 +585,12 @@ arrays: passed
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
-        $yaml = new YamlTransformer($this->getConfigDirectory(), $this->getFinder(), 10);
+        $collection = new ConfigCollection;
+        $yaml = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder(),
+            $collection
+        );
 
         $testData = [
             'key' => 'value',
@@ -553,7 +602,7 @@ YAML;
         });
         $merged = $yaml->transform();
 
-        $expected = [10 => ['key' => 'value', 'arrays' => 'passed']];
-        $this->assertEquals($expected, $merged);
+        $this->assertEquals('value', $collection->get('key')->getValue());
+        $this->assertEquals('passed', $collection->get('arrays')->getValue());
     }
 }

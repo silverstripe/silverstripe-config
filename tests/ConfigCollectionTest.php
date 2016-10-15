@@ -2,8 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 use micmania1\config\ConfigCollection;
-use micmania1\config\ConfigItem;
 use micmania1\config\ConfigItemInterface;
+use Prophecy\Prophet;
 
 class ConfigCollectionTest extends TestCase
 {
@@ -11,7 +11,7 @@ class ConfigCollectionTest extends TestCase
 
     protected function setUp()
     {
-        $this->prophet = new \Prophecy\Prophet;
+        $this->prophet = new Prophet;
     }
 
     public function testCollection()
@@ -40,6 +40,12 @@ class ConfigCollectionTest extends TestCase
         $this->assertCount(1, $collection->all());
     }
 
+    /**
+     * This creates a mock ConfigItermInterface
+     *
+     * @param mixed $value
+     * @param array $metaData
+     */
     private function createMockItem($value, $metaData = [])
     {
         $item = $this->prophet->prophesize(ConfigItemInterface::class);

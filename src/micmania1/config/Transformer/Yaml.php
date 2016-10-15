@@ -3,6 +3,8 @@
 namespace micmania1\config\Transformer;
 
 use micmania1\config\MergeStrategy\Priority;
+use micmania1\config\ConfigCollectionInterface;
+use micmania1\config\ConfigCollection;
 use Symfony\Component\Yaml\Yaml as YamlParser;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
@@ -91,7 +93,7 @@ class Yaml implements TransformerInterface
      * that Config can understand. Config will then be responsible for turning thie
      * output into the final merged config.
      *
-     * @return array
+     * @return ConfigCollectionInterface
      */
     public function transform()
     {
@@ -100,11 +102,12 @@ class Yaml implements TransformerInterface
         $documents = $this->getSortedYamlDocuments();
         foreach ($documents as $document) {
             if (!empty($document['content'])) {
-                $mergeStrategy->merge($document['content'], $this->collection);
+                $tmpCollection = new ConfigCollection($document['content']);
+                $mergeStrategy->merge($tmpCollection, $this->collection);
             }
         }
 
-        return [$this->sort => $config];
+        return $this->collection;
     }
 
     /**

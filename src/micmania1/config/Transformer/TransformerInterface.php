@@ -9,7 +9,7 @@ interface TransformerInterface
      * that Config can understand. Config will then be responsible for turning thie
      * output into the final merged config.
      *
-     * @return array
+     * @return \micmania1\config\ConfigCollectionInterface
      */
     public function transform();
 

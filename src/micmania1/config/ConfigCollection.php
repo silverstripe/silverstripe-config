@@ -12,11 +12,26 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     protected $config = [];
 
+    public function __construct(array $config = [])
+    {
+        foreach($config as $key => $item) {
+            if(!($item instanceof ConfigItemInterface)) {
+                $item = new ConfigItem($item);
+            }
+
+            $this->config[$key] = $item;
+        }
+    }
+
     /**
      * {@inheritdoc}
      */
-    public function set($key, ConfigItemInterface $item)
+    public function set($key, $item)
     {
+        if(!($item instanceof ConfigItemInterface)) {
+            $item = new ConfigItem($item);
+        }
+
         if(!$this->exists($key)) {
             $this->config[$key] = $item;
         }

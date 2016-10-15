@@ -2,6 +2,7 @@
 
 namespace micmania1\config\Transformer;
 
+use micmania1\config\ConfigCollectionInterface;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -18,12 +19,17 @@ class PrivateStaticTransformer implements TransformerInterface
     protected $sort = 0;
 
     /**
+     * @var ConfigCollectionInterface
+     */
+    protected $collection;
+
+    /**
      * @param array $classes
      */
-    public function __construct(array $classes, $sort = 0)
+    public function __construct(array $classes, ConfigCollectionInterface $collection)
     {
         $this->classes = $classes;
-        $this->sort = $sort;
+        $this->collection = $collection;
     }
 
     /**
@@ -31,17 +37,17 @@ class PrivateStaticTransformer implements TransformerInterface
      */
     public function transform()
     {
-        $config = [];
         foreach($this->classes as $class) {
             // Skip if the class doesn't exist
             if(!class_exists($class)) {
                 continue;
             }
 
-            $config[$class] = $this->getClassConfig($class);
+            $config = $this->getClassConfig($class);
+            $this->collection->set($class, $config);
         }
 
-        return [$this->sort => $config];
+        return $this->collection;
     }
 
     /**
