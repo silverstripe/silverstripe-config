@@ -11,9 +11,10 @@ interface ConfigCollectionInterface
      * Set the value of a single item
      *
      * @param string $key
-     * @param ConfigItemInterface $item
+     * @param mixed $value
+     * @param array $metadata
      */
-    public function set($key, $item);
+    public function set($key, $value, $metadata = []);
 
     /**
      * Fetches value and metadata for everything we have set
@@ -38,19 +39,19 @@ interface ConfigCollectionInterface
      *
      * @param string $key
      */
-    public function clear($key);
+    public function delete($key);
 
     /**
-     * Returns an array of available config keys
-     *
-     * @return string[]
-     */
-    public function keys();
-
-    /**
-     * Fetches all config items
+     * Returns the entire metadata
      *
      * @return array
      */
-    public function all();
+    public function getMetadata();
+
+    /*
+     * Returns the entire history
+     *
+     * @return array
+     */
+    public function getHistory();
 }

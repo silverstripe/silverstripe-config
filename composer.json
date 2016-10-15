@@ -3,7 +3,8 @@
     "require": {
         "symfony/finder": "^v3.1.2",
         "symfony/yaml": "^2.0|^3.1",
-        "marcj/topsort": "^1.0"
+        "marcj/topsort": "^1.0",
+        "psr/cache": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.4.0",

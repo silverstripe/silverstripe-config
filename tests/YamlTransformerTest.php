@@ -70,8 +70,7 @@ class YamlTransformerTest extends TestCase
     }
 
     /**
-     * This tests that if we have an empty file, it will not throw an error
-     * and will be returned as an empty array with the correct sort order.
+     * Test that we can have an empty file without throwing any errors.
      */
     public function testEmptyFileIgnored()
     {
@@ -84,8 +83,6 @@ class YamlTransformerTest extends TestCase
             $collection
         );
         $transformer->transform();
-
-        $this->assertEquals([], $collection->all());
     }
 
     /**
@@ -94,23 +91,6 @@ class YamlTransformerTest extends TestCase
      */
     public function testEmptyDocumentIgnored()
     {
-        $header = <<<'YAML'
----
-name: 'test'
----
-YAML;
-        file_put_contents($this->getFilePath('emptydoc.yml'), $header);
-
-        $collection = new ConfigCollection;
-        $transformer = new YamlTransformer(
-            $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
-        );
-        $transformer->transform();
-
-        $this->assertEquals([], $collection->all());
-
         // Now we'll test the same thing again, but the empty document will be mid-file
         $content = <<<'YAML'
 first: firstValue
@@ -139,9 +119,8 @@ YAML;
             'first' => 'firstValue',
             'third' => 'thirdValue',
         ];
-        $this->assertEquals(['first', 'third'], $collection->keys());
-        $this->assertEquals('firstValue', $collection->get('first')->getValue());
-        $this->assertEquals('thirdValue', $collection->get('third')->getValue());
+        $this->assertEquals('firstValue', $collection->get('first'));
+        $this->assertEquals('thirdValue', $collection->get('third'));
     }
 
     /**
@@ -182,7 +161,7 @@ YAML;
             ],
         ];
 
-        $this->assertEquals($expected, $collection->get('MyConfig')->getValue());
+        $this->assertEquals($expected, $collection->get('MyConfig'));
     }
 
     /**
@@ -207,7 +186,7 @@ YAML;
         );
         $transformer->transform();
 
-        $this->assertEquals('blah', $collection->get('Test')->getValue());
+        $this->assertEquals('blah', $collection->get('Test'));
     }
 
     /**
@@ -250,7 +229,7 @@ YAML;
         );
         $transformer->transform();
 
-        $this->assertEquals('overwritten', $collection->get('test')->getValue());
+        $this->assertEquals('overwritten', $collection->get('test'));
     }
 
     /**
@@ -281,7 +260,7 @@ YAML;
         );
         $transformer->transform();
 
-        $this->assertEquals('actualvalue', $collection->get('test')->getValue());
+        $this->assertEquals('actualvalue', $collection->get('test'));
     }
 
     /**
@@ -316,7 +295,7 @@ YAML;
         );
         $transformer->transform();
 
-        $this->assertEquals('test', $collection->get('test')->getValue());
+        $this->assertEquals('test', $collection->get('test'));
 
         $content = <<<'YAML'
 ---
@@ -335,7 +314,7 @@ YAML;
         );
         $transformer->transform();
 
-        $this->assertEquals('overwrite', $collection->get('test')->getValue());
+        $this->assertEquals('overwrite', $collection->get('test'));
     }
 
     /**
@@ -411,7 +390,7 @@ YAML;
         });
         $yaml->transform();
 
-        $this->assertEquals('overwritten', $collection->get('test')->getValue());
+        $this->assertEquals('overwritten', $collection->get('test'));
     }
 
     /**
@@ -459,7 +438,7 @@ YAML;
         });
         $yaml->transform();
 
-        $this->assertEquals('overwritten', $collection->get('test')->getValue());
+        $this->assertEquals('overwritten', $collection->get('test'));
     }
 
     /**
@@ -513,8 +492,8 @@ YAML;
         });
         $yaml->transform();
 
-        $this->assertEquals('overwritten', $collection->get('test')->getValue());
-        $this->assertEquals('test2', $collection->get('test2')->getValue());
+        $this->assertEquals('overwritten', $collection->get('test'));
+        $this->assertEquals('test2', $collection->get('test2'));
     }
 
     public function testIgnoredOnlyExceptRule()
@@ -546,8 +525,8 @@ YAML;
         $yaml->ignoreRule('testcase');
         $yaml->transform();
 
-        $this->assertEquals('test1', $collection->get('test1')->getValue());
-        $this->assertEquals('test2', $collection->get('test2')->getValue());
+        $this->assertEquals('test1', $collection->get('test1'));
+        $this->assertEquals('test2', $collection->get('test2'));
     }
 
     public function testKeyValueOnlyExceptStatements()
@@ -602,7 +581,7 @@ YAML;
         });
         $merged = $yaml->transform();
 
-        $this->assertEquals('value', $collection->get('key')->getValue());
-        $this->assertEquals('passed', $collection->get('arrays')->getValue());
+        $this->assertEquals('value', $collection->get('key'));
+        $this->assertEquals('passed', $collection->get('arrays'));
     }
 }

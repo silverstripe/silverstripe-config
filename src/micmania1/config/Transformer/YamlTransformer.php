@@ -5,7 +5,6 @@ namespace micmania1\config\Transformer;
 use micmania1\config\MergeStrategy\Priority;
 use micmania1\config\ConfigCollectionInterface;
 use micmania1\config\ConfigCollection;
-use micmania1\config\ConfigItem;
 use Symfony\Component\Yaml\Yaml as YamlParser;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
@@ -104,21 +103,23 @@ class YamlTransformer implements TransformerInterface
 
         foreach ($documents as $document) {
             if (!empty($document['content'])) {
-                // We create a temporary collection for each document before merging it
-                // into the existing collection
-                $tmpCollection = new ConfigCollection;
-
                 // We prepare the meta data
                 $metadata = $document['header'];
                 $metadata['transformer'] = static::class;
 
+                // We create a temporary collection for each document before merging it
+                // into the existing collection
+                $items = [];
+
                 // And create each item
                 foreach($document['content'] as $key => $value) {
-                    $item = new ConfigItem($value, $metadata);
-                    $tmpCollection->set($key, $item);
+                    $items[$key] = [
+                        'value' => $value,
+                        'metadata' => $metadata
+                    ];
                 }
 
-                $mergeStrategy->merge($tmpCollection, $this->collection);
+                $mergeStrategy->merge($items, $this->collection);
             }
         }
 
