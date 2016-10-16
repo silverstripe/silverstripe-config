@@ -45,8 +45,8 @@ class CachedConfigCollection implements ConfigCollectionInterface
         $cacheItem = $this->pool->getItem($key);
 
         if($this->trackMetadata) {
-            $cachedMetadata= $this->getMetadata();
-            $cachedHistory= $this->getHistory();
+            $cachedMetadata = $this->getMetadata();
+            $cachedHistory = $this->getHistory();
 
             if($this->exists($key) && isset($metadata[$key])) {
                 array_unshift($cachedHistory, [
@@ -101,13 +101,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function getMetadata()
     {
-        $metadata = $this->pool->getItem(self::METADATA_KEY)->get();
-
-        if(!is_array($metadata)) {
-            $metadata = [];
-        }
-
-        return $metadata;
+        return $this->getTrackingData(self::METADATA_KEY);
     }
 
     /**
@@ -115,13 +109,26 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function getHistory()
     {
-        $history = $this->pool->getItem(self::HISTORY_KEY);
+        return $this->getTrackingData(self::HISTORY_KEY);
+    }
 
-        if(!is_array($history)) {
-            $history = [];
+    /**
+     * A shortcut for tracking data (metadata and history). This will
+     * always return an array, even if we're not tracking.
+     *
+     * @param string $key
+     *
+     * @return array
+     */
+    private function getTrackingData($key)
+    {
+        if (!$this->trackMetadata) {
+            return [];
         }
 
-        return $history;
+        $value = $this->pool->getItem($key)->get();
+
+        return is_array($value) ? $value : [];
     }
 
     /**

@@ -1,20 +1,11 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
 use micmania1\config\ConfigCollection;
-use micmania1\config\ConfigItem;
-use Prophecy\Prophet;
+use PHPUnit\Framework\TestCase;
 
 class ConfigCollectionTest extends TestCase
 {
-    private $prophet;
-
-    protected function setUp()
-    {
-        $this->prophet = new Prophet;
-    }
-
-    public function testCollection()
+    public function testGetSetAndDelete()
     {
         $collection = new ConfigCollection;
 
