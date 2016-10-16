@@ -18,12 +18,6 @@ class PrivateStaticTransformerTest extends TestCase
 
         $transformer->transform();
 
-        // Asert that keys match
-        $this->assertEquals(
-            [PrivateStaticTransformerTest_ClassA::class],
-            $collection->keys()
-        );
-
         // Assert that the value matches
         $expected = [
             'myString' => 'value',
@@ -34,7 +28,7 @@ class PrivateStaticTransformerTest extends TestCase
         ];
         $this->assertEquals(
             $expected,
-            $collection->get(PrivateStaticTransformerTest_ClassA::class)->getValue()
+            $collection->get(PrivateStaticTransformerTest_ClassA::class)
         );
     }
 
@@ -68,13 +62,11 @@ class PrivateStaticTransformerTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($classes, $collection->keys());
-
         $classA = PrivateStaticTransformerTest_ClassA::class;
         $classB = PrivateStaticTransformerTest_ClassB::class;
 
-        $this->assertEquals($expectedA, $collection->get($classA)->getValue());
-        $this->assertEquals($expectedB, $collection->get($classB)->getValue());
+        $this->assertEquals($expectedA, $collection->get($classA));
+        $this->assertEquals($expectedB, $collection->get($classB));
     }
 
     /**
@@ -90,7 +82,7 @@ class PrivateStaticTransformerTest extends TestCase
         $collection = new ConfigCollection;
         $transformer = new PrivateStaticTransformer([$class], $collection);
         $transformer->transform();
-        $this->assertEquals([], $collection->keys());
+        $this->assertFalse($collection->exists($class));
     }
 
 }

@@ -3,7 +3,6 @@
 namespace micmania1\config\Transformer;
 
 use micmania1\config\ConfigCollectionInterface;
-use micmania1\config\ConfigItem;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -48,7 +47,7 @@ class PrivateStaticTransformer implements TransformerInterface
             $item = $this->getClassConfig($class);
 
             // Add the item to the collection
-            $this->collection->set($class, $item);
+            $this->collection->set($class, $item['value'], $item['metadata']);
         }
 
         return $this->collection;
@@ -60,17 +59,16 @@ class PrivateStaticTransformer implements TransformerInterface
      *
      * @param string $class
      *
-     * @return ConfigItem
+     * @return mixed
      */
     protected function getClassConfig($class)
     {
         $reflection = new ReflectionClass($class);
 
-        /** @var \ReflectionProperty[] **/
+        /** @var ReflectionProperty[] **/
         $props = $reflection->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
-
         foreach($props as $prop) {
             if(!$prop->isPrivate()) {
                 // Ignore anything which isn't private
@@ -88,7 +86,7 @@ class PrivateStaticTransformer implements TransformerInterface
             'transformer' => static::class
         ];
 
-        return new ConfigItem($classConfig, $metadata);
+        return ['value' => $classConfig, 'metadata' => $metadata];
     }
 
 }

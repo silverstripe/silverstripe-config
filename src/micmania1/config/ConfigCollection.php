@@ -13,6 +13,16 @@ class ConfigCollection implements ConfigCollectionInterface
     protected $config = [];
 
     /**
+     * @var array
+     */
+    protected $metadata = [];
+
+    /**
+     * @var array
+     */
+    protected $history = [];
+
+    /**
      * @var boolean
      */
     protected $trackMetadata = false;
@@ -25,19 +35,24 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function set($key, $item)
+    public function set($key, $value, $metadata = [])
     {
-        if(!$this->exists($key)) {
-            $this->config[$key] = $item;
+        if($this->trackMetadata) {
+            if(isset($this->metadata[$key]) && isset($this->config[$key])) {
+                if(!isset($this->history[$key])) {
+                    $this->history[$key] = [];
+                }
+
+                array_unshift($this->history[$key], [
+                    'value' => $this->config[$key],
+                    'metadata' => $this->metadata[$key]
+                ]);
+            }
+
+            $this->metadata[$key] = $metadata;
         }
 
-        // Get the existing item so we can set the new value on it
-        $existing = $this->config[$key];
-
-        // Ensure that that tracking is correct for items belonging to this collection
-        $existing->trackMetadata($this->trackMetadata);
-
-        $existing->set($item->getValue(), $item->getMetadata());
+        $this->config[$key] = $value;
     }
 
     /**
@@ -63,7 +78,7 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function clear($key)
+    public function delete($key)
     {
         if($this->exists($key)) {
             unset($this->config[$key]);
@@ -73,16 +88,24 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function keys()
+    public function getMetadata()
     {
-        return array_keys($this->config);
+        if(!$this->trackMetadata || !is_array($this->metadata)) {
+            return [];
+        }
+
+        return $this->metadata;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function all()
+    public function getHistory()
     {
-        return $this->config;
+        if(!$this->trackMetadata || !is_array($this->history)) {
+            return [];
+        }
+
+        return $this->history;
     }
 }
