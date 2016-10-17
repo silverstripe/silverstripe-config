@@ -99,6 +99,14 @@ class CachedConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
+    public function deleteAll()
+    {
+        $this->pool->clear();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getMetadata()
     {
         return $this->getTrackingData(self::METADATA_KEY);

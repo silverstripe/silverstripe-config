@@ -42,6 +42,11 @@ interface ConfigCollectionInterface
     public function delete($key);
 
     /**
+     * Delete all entries
+     */
+    public function deleteAll();
+
+    /**
      * Returns the entire metadata
      *
      * @return array

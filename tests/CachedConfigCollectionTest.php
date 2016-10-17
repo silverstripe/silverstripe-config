@@ -136,4 +136,14 @@ class CachedConfigCollectionTest extends TestCase
         // Perform the action
         $collection->set('key1', 'value', ['metakey' => 'metavalue']);
     }
+
+    public function testDeleteAll()
+    {
+        $mockCache = $this->prophet->prophesize(CacheItemPoolInterface::class);
+        $collection = new CachedConfigCollection($mockCache->reveal());
+
+        $mockCache->commit()->shouldBeCalled();
+        $mockCache->clear()->shouldBeCalled();
+        $collection->deleteAll();
+    }
 }

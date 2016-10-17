@@ -88,6 +88,16 @@ class ConfigCollection implements ConfigCollectionInterface
     /**
      * {@inheritdoc}
      */
+    public function deleteAll()
+    {
+        $this->config = [];
+        $this->metadata = [];
+        $this->history = [];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getMetadata()
     {
         if(!$this->trackMetadata || !is_array($this->metadata)) {

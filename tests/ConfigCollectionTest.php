@@ -18,6 +18,9 @@ class ConfigCollectionTest extends TestCase
         $collection->delete('test');
         $this->assertFalse($collection->exists('test'));
         $this->assertNull($collection->get('test'));
+
+        $collection->deleteAll();
+        $this->assertFalse($collection->exists('test2'));
     }
 
     public function testNoMetadataTracking()
