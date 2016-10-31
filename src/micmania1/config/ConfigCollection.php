@@ -72,7 +72,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function exists($key)
     {
-        return array_key_exists($key, $this->config);
+        return isset($this->config[$key]);
     }
 
     /**

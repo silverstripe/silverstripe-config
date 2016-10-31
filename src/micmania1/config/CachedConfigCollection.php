@@ -41,6 +41,8 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function set($key, $value, $metadata = [])
     {
+        $key = strtolower($key);
+
         // We use null as the key to return an empty cache item
         $cacheItem = $this->pool->getItem($key);
 
@@ -48,8 +50,11 @@ class CachedConfigCollection implements ConfigCollectionInterface
             $cachedMetadata = $this->getMetadata();
             $cachedHistory = $this->getHistory();
 
-            if($this->exists($key) && isset($metadata[$key])) {
-                array_unshift($cachedHistory, [
+            if($this->exists($key) && isset($cachedMetadata[$key])) {
+                if(!isset($cachedHistory[$key])) {
+                    $cachedHistory[$key] = [];
+                }
+                array_unshift($cachedHistory[$key], [
                     'value' => $value,
                     'metadata' => $metadata,
                 ]);
@@ -71,6 +76,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function get($key)
     {
+        $key = strtolower($key);
         if(!$this->exists($key)) {
             return null;
         }
@@ -85,6 +91,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function exists($key)
     {
+        $key = strtolower($key);
         return $this->pool->hasItem($key);
     }
 
@@ -93,6 +100,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function delete($key)
     {
+        $key = strtolower($key);
         $this->pool->deleteItem($key);
     }
 
@@ -134,6 +142,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
             return [];
         }
 
+        $ket = strtolower($key);
         $value = $this->pool->getItem($key)->get();
 
         return is_array($value) ? $value : [];
