@@ -142,7 +142,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
             return [];
         }
 
-        $ket = strtolower($key);
+        $key = strtolower($key);
         $value = $this->pool->getItem($key)->get();
 
         return is_array($value) ? $value : [];
