@@ -75,8 +75,10 @@ class CachedConfigCollectionTest extends TestCase
 
         // Because we're not tracking metadata, we should never call the cache when
         // looking up history or metadata
-        $mockCache->getItem(CachedConfigCollection::METADATA_KEY)->shouldNotBeCalled();
-        $mockCache->getItem(CachedConfigCollection::HISTORY_KEY)->shouldNotBeCalled();
+        $mockCache->getItem(CachedConfigCollection::METADATA_KEY)
+            ->shouldNotBeCalled();
+        $mockCache->getItem(CachedConfigCollection::HISTORY_KEY)
+            ->shouldNotBeCalled();
 
         // metadata should be turned off by default
         $collection = new CachedConfigCollection($mockCache->reveal());
