@@ -1,10 +1,9 @@
 <?php
 
-namespace micmania1\config\Transformer;
+namespace SilverStripe\Config\Transformer;
 
-use micmania1\config\MergeStrategy\Priority;
-use micmania1\config\ConfigCollectionInterface;
-use micmania1\config\ConfigCollection;
+use SilverStripe\Config\MergeStrategy\Priority;
+use SilverStripe\Config\Collections\MutableConfigCollectionInterface;
 use Symfony\Component\Yaml\Yaml as YamlParser;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
@@ -48,11 +47,6 @@ class YamlTransformer implements TransformerInterface
     protected $documents = [];
 
     /**
-     * @var ConfigCollectionInterface
-     */
-    protected $collection;
-
-    /**
      * Base directory used to find yaml files.
      *
      * @var string
@@ -76,12 +70,10 @@ class YamlTransformer implements TransformerInterface
     /**
      * @param string $baseDir directory to scan for yaml files
      * @param Finder $finder
-     * @param ConfigCollectionInterface $collection
      */
-    public function __construct($baseDir, Finder $finder, ConfigCollectionInterface $collection)
+    public function __construct($baseDir, Finder $finder)
     {
         $this->baseDirectory = $baseDir;
-        $this->collection = $collection;
 
         foreach ($finder as $file) {
             $this->files[$file->getPathname()] = $file->getPathname();
@@ -89,16 +81,25 @@ class YamlTransformer implements TransformerInterface
     }
 
     /**
+     * @param string $baseDir directory to scan for yaml files
+     * @param Finder $finder
+     * @return static
+     */
+    public static function create($baseDir, Finder $finder)
+    {
+        return new static($baseDir, $finder);
+    }
+
+    /**
      * This is responsible for parsing a single yaml file and returning it into a format
      * that Config can understand. Config will then be responsible for turning thie
      * output into the final merged config.
      *
-     * @return ConfigCollectionInterface
+     * @param  MutableConfigCollectionInterface $collection
+     * @return MutableConfigCollectionInterface
      */
-    public function transform()
+    public function transform(MutableConfigCollectionInterface $collection)
     {
-        $mergeStrategy = new Priority();
-
         $documents = $this->getSortedYamlDocuments();
 
         foreach ($documents as $document) {
@@ -113,18 +114,18 @@ class YamlTransformer implements TransformerInterface
                 $items = [];
 
                 // And create each item
-                foreach($document['content'] as $key => $value) {
+                foreach ($document['content'] as $key => $value) {
                     $items[$key] = [
                         'value' => $value,
                         'metadata' => $metadata
                     ];
                 }
 
-                $mergeStrategy->merge($items, $this->collection);
+                Priority::merge($items, $collection);
             }
         }
 
-        return $this->collection;
+        return $collection;
     }
 
     /**
@@ -133,13 +134,15 @@ class YamlTransformer implements TransformerInterface
      * remove rules after being set. This also prevent built-in rules from being
      * removed.
      *
-     * @param string $rule
-     * @param Closure $func
+     * @param  string  $rule
+     * @param  Closure $func
+     * @return $this
      */
     public function addRule($rule, Closure $func)
     {
         $rule = strtolower($rule);
         $this->rules[$rule] = $func;
+        return $this;
     }
 
     /**
@@ -187,6 +190,7 @@ class YamlTransformer implements TransformerInterface
      * Returns an array of YAML documents keyed by name.
      *
      * @return array
+     * @throws Exception
      */
     protected function getNamedYamlDocuments()
     {
@@ -255,9 +259,8 @@ class YamlTransformer implements TransformerInterface
                 }
 
                 if (($context === 'content' || $firstLine) && ($line === '---' || $line === '...')) {
-
                     // '...' is the end of a document with no more documents after it.
-                    if($line === '...') {
+                    if ($line === '...') {
                         ++$key;
                         break;
                     }
@@ -326,17 +329,17 @@ class YamlTransformer implements TransformerInterface
     /**
      * Incapsulates the logic for adding before/after dependencies.
      *
-     * @param array        $header
-     * @param string       $flag
-     * @param array        $dependencies
-     * @param array        $documents
+     * @param array  $header
+     * @param string $flag
+     * @param array  $dependencies
+     * @param array  $documents
      *
      * @return array
      */
     protected function addDependencies($header, $flag, $dependencies, $documents)
     {
         // If header isn't set then return dependencies
-        if(!isset($header[$flag]) || !in_array($flag, [self::BEFORE_FLAG, self::AFTER_FLAG])) {
+        if (!isset($header[$flag]) || !in_array($flag, [self::BEFORE_FLAG, self::AFTER_FLAG])) {
             return $dependencies;
         }
 
@@ -348,7 +351,7 @@ class YamlTransformer implements TransformerInterface
         foreach ($header[$flag] as $dependency) {
             // Because wildcards and hashes exist, our 'dependency' might actually match
             // multiple blocks and therefore could be multiple dependencies.
-            $matchingDocuments = $this->getMatchingDocuments($dependency, $documents);
+            $matchingDocuments = $this->getMatchingDocuments($dependency, $documents, $flag);
 
             foreach ($matchingDocuments as $document) {
                 $dependencyName = $document['header']['name'];
@@ -373,12 +376,12 @@ class YamlTransformer implements TransformerInterface
      * This returns an array of documents which match the given pattern. The pattern is
      * expected to come from before/after blocks of yaml (eg. framwork/*).
      *
-     * @param string $pattern
-     * @param array
-     *
+     * @param  string $pattern
+     * @param  array  $documents
+     * @param  string $flag      'before' / 'after'
      * @return array
      */
-    protected function getMatchingDocuments($pattern, $documents)
+    protected function getMatchingDocuments($pattern, $documents, $flag)
     {
         // If the pattern exists as a document name then its just a simple name match
         // and we can return that single document.
@@ -393,14 +396,25 @@ class YamlTransformer implements TransformerInterface
             if (isset($documents[$name])) {
                 return [$documents[$name]];
             }
-
             return [];
         }
 
-        // If we only have an astericks, we'll add all unnamed docs. By excluding named docs
-        // we don't run into a circular depndency issue.
-        if($pattern === '*') {
-            $pattern = 'anonymous-*';
+        // After="*" docs are after all documents except OTHER After="*",
+        // and likewise for Before="*"
+        if ($pattern === '*') {
+            return array_filter(
+                $documents,
+                function ($document) use ($flag) {
+                    if (empty($document['header'][$flag])) {
+                        return true;
+                    }
+                    $otherPatterns = $document['header'][$flag];
+                    if (is_array($otherPatterns)) {
+                        return !in_array('*', $otherPatterns);
+                    }
+                    return $otherPatterns !== '*';
+                }
+            );
         }
 
         // Do pattern matching on file names. This requires us to loop through each document
@@ -490,14 +504,14 @@ class YamlTransformer implements TransformerInterface
     {
         $documents = $this->getNamedYamlDocuments();
         $filtered = [];
-        foreach($documents as $key => $document) {
+        foreach ($documents as $key => $document) {
             // If not all rules match, then we exclude this document
-            if(!$this->testRules($document['header'], self::ONLY_FLAG)) {
+            if (!$this->testRules($document['header'], self::ONLY_FLAG)) {
                 continue;
             }
 
             // If all rules pass, then we exclude this document
-            if($this->testRules($document['header'], self::EXCEPT_FLAG)) {
+            if ($this->testRules($document['header'], self::EXCEPT_FLAG)) {
                 continue;
             }
 
@@ -510,30 +524,30 @@ class YamlTransformer implements TransformerInterface
     /**
      * Tests the only except rules for a header.
      *
-     * @param array $header
-     * @param string $flag
-     *
-     * @return boolean
+     * @param  array  $header
+     * @param  string $flag
+     * @return bool
+     * @throws Exception
      */
     protected function testRules($header, $flag)
     {
         // If flag is not set, then it has no tests
-        if(!isset($header[$flag])) {
+        if (!isset($header[$flag])) {
             // We want only to pass, except to fail
             return $flag === self::ONLY_FLAG;
         }
 
-        if(!is_array($header[$flag])) {
+        if (!is_array($header[$flag])) {
             throw new Exception(sprintf('\'%s\' statements must be an array', $flag));
         }
 
-        foreach($header[$flag] as $rule => $params) {
-            if($this->isRuleIgnored($rule)) {
+        foreach ($header[$flag] as $rule => $params) {
+            if ($this->isRuleIgnored($rule)) {
                 // If checking only, then return true. Otherwise, return false.
                 return $flag === self::ONLY_FLAG;
             }
 
-            if(!$this->testSingleRule($rule, $params)) {
+            if (!$this->testSingleRule($rule, $params)) {
                 return false;
             }
         }
@@ -544,24 +558,25 @@ class YamlTransformer implements TransformerInterface
     /**
      * Tests a rule against the given expected result.
      *
-     * @param string $rule
-     * @param string|array $params
-     *
-     * @return boolean
+     * @param  string       $rule
+     * @param  string|array $params
+     * @return bool
+     * @throws Exception
      */
     protected function testSingleRule($rule, $params)
     {
-        if(!$this->hasRule($rule)) {
+        $rule = strtolower($rule);
+        if (!$this->hasRule($rule)) {
             throw new Exception(sprintf('Rule \'%s\' doesn\'t exist.', $rule));
         }
 
-        if(!is_array($params)) {
+        if (!is_array($params)) {
             return $this->rules[$rule]($params);
         }
 
         // If its an array, we'll loop through each parameter
-        foreach($params as $key => $value) {
-            if(!$this->rules[$rule]($key, $value)) {
+        foreach ($params as $key => $value) {
+            if (!$this->rules[$rule]($key, $value)) {
                 return false;
             }
         }

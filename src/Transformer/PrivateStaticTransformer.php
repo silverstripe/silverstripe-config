@@ -1,17 +1,17 @@
 <?php
 
-namespace micmania1\config\Transformer;
+namespace SilverStripe\Config\Transformer;
 
-use micmania1\config\ConfigCollectionInterface;
+use SilverStripe\Config\Collections\MutableConfigCollectionInterface;
 use ReflectionClass;
 use ReflectionProperty;
 
 class PrivateStaticTransformer implements TransformerInterface
 {
     /**
-     * @var array
+     * @var array|callable
      */
-    protected $classes = [];
+    protected $classes = null;
 
     /**
      * @var int
@@ -19,27 +19,27 @@ class PrivateStaticTransformer implements TransformerInterface
     protected $sort = 0;
 
     /**
-     * @var ConfigCollectionInterface
+     * @param array|callable $classes List of classes, or callback to lazy-load
      */
-    protected $collection;
-
-    /**
-     * @param array $classes
-     */
-    public function __construct(array $classes, ConfigCollectionInterface $collection)
+    public function __construct($classes)
     {
         $this->classes = $classes;
-        $this->collection = $collection;
     }
 
     /**
      * This loops through each class and fetches the private static config for each class.
+     *
+     * @param MutableConfigCollectionInterface $collection
+     * @return MutableConfigCollectionInterface
      */
-    public function transform()
+    public function transform(MutableConfigCollectionInterface $collection)
     {
-        foreach($this->classes as $class) {
+        // Lazy-resolve class list
+        $classes = $this->getClasses();
+
+        foreach ($classes as $class) {
             // Skip if the class doesn't exist
-            if(!class_exists($class)) {
+            if (!class_exists($class)) {
                 continue;
             }
 
@@ -47,18 +47,17 @@ class PrivateStaticTransformer implements TransformerInterface
             $item = $this->getClassConfig($class);
 
             // Add the item to the collection
-            $this->collection->set($class, $item['value'], $item['metadata']);
+            $collection->set($class, null, $item['value'], $item['metadata']);
         }
 
-        return $this->collection;
+        return $collection;
     }
 
     /**
      * This is responsible for introspecting a given class and returning an
      * array continaing all of its private statics
      *
-     * @param string $class
-     *
+     * @param  string $class
      * @return mixed
      */
     protected function getClassConfig($class)
@@ -69,8 +68,8 @@ class PrivateStaticTransformer implements TransformerInterface
         $props = $reflection->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
-        foreach($props as $prop) {
-            if(!$prop->isPrivate()) {
+        foreach ($props as $prop) {
+            if (!$prop->isPrivate()) {
                 // Ignore anything which isn't private
                 continue;
             }
@@ -89,4 +88,15 @@ class PrivateStaticTransformer implements TransformerInterface
         return ['value' => $classConfig, 'metadata' => $metadata];
     }
 
+    /**
+     * @return array
+     */
+    public function getClasses()
+    {
+        if (!is_array($this->classes) && is_callable($this->classes)) {
+            return call_user_func($this->classes);
+        }
+
+        return $this->classes;
+    }
 }

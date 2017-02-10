@@ -1,6 +1,6 @@
 <?php
 
-namespace micmania1\config\Exceptions;
+namespace SilverStripe\Config\Exceptions;
 
 use Exception;
 
