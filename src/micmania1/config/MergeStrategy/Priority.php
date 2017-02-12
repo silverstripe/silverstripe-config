@@ -45,7 +45,7 @@ class Priority
      *
      * @return array
      */
-    protected function mergeArray(array $highPriority, array $lowPriority)
+    public function mergeArray(array $highPriority, array $lowPriority)
     {
         foreach($highPriority as $key => $value) {
             // If value isn't an array, we can overwrite whatever was before it
