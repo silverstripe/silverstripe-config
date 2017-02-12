@@ -3,6 +3,7 @@
 namespace micmania1\config;
 
 use Psr\Cache\CacheItemPoolInterface;
+use Exception;
 
 class CachedConfigCollection implements ConfigCollectionInterface
 {
@@ -41,10 +42,10 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function set($key, $value, $metadata = [])
     {
-        $key = strtolower($key);
+        $cacheKey = $this->normaliseKey($key);
 
         // We use null as the key to return an empty cache item
-        $cacheItem = $this->pool->getItem($key);
+        $cacheItem = $this->pool->getItem($cacheKey);
 
         if($this->trackMetadata) {
             $cachedMetadata = $this->getMetadata();
@@ -76,14 +77,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function get($key)
     {
-        $key = strtolower($key);
-        if(!$this->exists($key)) {
-            return null;
-        }
+        $key = $this->normaliseKey($key);
 
-        $cacheItem = $this->pool->getItem($key);
-
-        return $cacheItem->get() ?: null;
+        return $this->pool->getItem($key)->get();
     }
 
     /**
@@ -91,7 +87,8 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function exists($key)
     {
-        $key = strtolower($key);
+        $key = $this->normaliseKey($key);
+
         return $this->pool->hasItem($key);
     }
 
@@ -100,7 +97,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
      */
     public function delete($key)
     {
-        $key = strtolower($key);
+        $key = $this->normaliseKey($key);
         $this->pool->deleteItem($key);
     }
 
@@ -142,6 +139,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
             return [];
         }
 
+        $key = $this->normaliseKey($key);
         $value = $this->pool->getItem($key)->get();
 
         return is_array($value) ? $value : [];
@@ -171,6 +169,20 @@ class CachedConfigCollection implements ConfigCollectionInterface
         $cached->set($history);
 
         $this->pool->saveDeferred($cached);
+    }
+
+    /**
+     * We replace backslashes with commas as backslashes are not allowed in PSR-6
+     * implementations. Commas will rarely (if ever) be used for cache keys. We also
+     * convert the key to lowercase to ensure case insensitivity.
+     *
+     * @param string $key
+     *
+     * @return string
+     */
+    protected function normaliseKey($key)
+    {
+        return str_replace('\\', ',', strtolower($key));
     }
 
     /**

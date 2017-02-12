@@ -37,6 +37,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function set($key, $value, $metadata = [])
     {
+        $key = strtolower($key);
         if($this->trackMetadata) {
             if(isset($this->metadata[$key]) && isset($this->config[$key])) {
                 if(!isset($this->history[$key])) {
@@ -60,6 +61,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function get($key)
     {
+        $key = strtolower($key);
         if(!$this->exists($key)) {
             return null;
         }
@@ -72,6 +74,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function exists($key)
     {
+        $key = strtolower($key);
         return isset($this->config[$key]);
     }
 
@@ -80,6 +83,7 @@ class ConfigCollection implements ConfigCollectionInterface
      */
     public function delete($key)
     {
+        $key = strtolower($key);
         if($this->exists($key)) {
             unset($this->config[$key]);
         }
