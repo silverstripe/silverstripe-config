@@ -106,6 +106,7 @@ class YamlTransformer implements TransformerInterface
                 // We prepare the meta data
                 $metadata = $document['header'];
                 $metadata['transformer'] = static::class;
+                $metadata['filename'] = $document['filename'];
 
                 // We create a temporary collection for each document before merging it
                 // into the existing collection
