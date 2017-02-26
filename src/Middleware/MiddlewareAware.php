@@ -40,22 +40,22 @@ trait MiddlewareAware
     /**
      * Call middleware to get decorated class config
      *
-     * @param  string   $class   Class name to pass
-     * @param  mixed    $options
-     * @param  callable $last    Last config to call
+     * @param string $class   Class name to pass
+     * @param int|bool $excludeMiddleware
+     * @param callable $last Last config to call
      * @return array Class config with middleware applied
      */
-    protected function callMiddleware($class, $options, $last)
+    protected function callMiddleware($class, $excludeMiddleware, $last)
     {
         // Build middleware from back to front
         $next = $last;
 
         /** @var Middleware $middleware */
         foreach (array_reverse($this->getMiddlewares()) as $middleware) {
-            $next = function ($class, $options) use ($middleware, $next) {
-                return $middleware->getClassConfig($class, $options, $next);
+            $next = function ($class, $excludeMiddleware) use ($middleware, $next) {
+                return $middleware->getClassConfig($class, $excludeMiddleware, $next);
             };
         }
-        return $next($class, $options);
+        return $next($class, $excludeMiddleware);
     }
 }

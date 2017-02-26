@@ -9,10 +9,10 @@ interface Middleware extends Serializable
     /**
      * Get config for a class
      *
-     * @param  string   $class
-     * @param  mixed    $options Options flag passed in
-     * @param  callable $next
-     * @return string
+     * @param string $class Name of class
+     * @param int|true $excludeMiddleware Middleware disable flags
+     * @param callable $next Callback to next middleware
+     * @return array Complete class config
      */
-    public function getClassConfig($class, $options, $next);
+    public function getClassConfig($class, $excludeMiddleware, $next);
 }

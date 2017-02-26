@@ -428,16 +428,20 @@ class YamlTransformer implements TransformerInterface
             $pattern = substr($pattern, 0, $firstHash);
         }
 
-        // @todo better sanitisation needed for special chars (chars used by preg_match())
-        $pattern = str_replace(DIRECTORY_SEPARATOR, '\\'.DIRECTORY_SEPARATOR, $pattern);
-        $pattern = str_replace('*', '[^\.][a-zA-Z0-9\-_\/\.]+', $pattern);
-
+        // Replace all `*` with `[^\.][a-zA-Z0-9\-_\/\.]+`, and quote other characters
+        $patternRegExp = '%^'.implode(
+            '[^\.][a-zA-Z0-9\-_\/\.]+',
+            array_map(
+                function($part) { return preg_quote($part, '%'); },
+                explode('*', $pattern)
+            )
+        ).'%';
         $matchedDocuments = [];
         foreach ($documents as $document) {
             // Ensure filename is relative
             $filename = $this->makeRelative($document['filename']);
-            if (preg_match('%^'.$pattern.'%', $filename)) {
-                if (!empty($documentName) && $documentName != $document['header']['name']) {
+            if (preg_match($patternRegExp, $filename)) {
+                if (!empty($documentName) && $documentName !== $document['header']['name']) {
                     // If we're looking for a specific document. If not found we can continue
                     continue;
                 }

@@ -45,9 +45,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
         return new static();
     }
 
-    public function get($class, $name = null, $options = 0)
+    public function get($class, $name = null, $excludeMiddleware = 0)
     {
-        return $this->getCollection()->get($class, $name, $options);
+        return $this->getCollection()->get($class, $name, $excludeMiddleware);
     }
 
     public function getAll()
@@ -55,9 +55,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
         return $this->getCollection()->getAll();
     }
 
-    public function exists($class, $name = null, $options = 0)
+    public function exists($class, $name = null, $excludeMiddleware = 0)
     {
-        return $this->getCollection()->exists($class, $name, $options);
+        return $this->getCollection()->exists($class, $name, $excludeMiddleware);
     }
 
     public function getMetadata()

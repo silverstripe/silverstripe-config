@@ -10,29 +10,28 @@ use SilverStripe\Config\Middleware\Middleware;
 interface ConfigCollectionInterface
 {
     /**
-     * Fetches value for a class, or a field on that class
+     * Fetches value for a class, or a property on that class
      *
-     * @param string $class
-     * @param string $name    Optional sub-key to get
-     * @param mixed  $options Optional flag of middleware to disable. Passing in `true` disables
-     *                        all middleware. Can also pass in int flags, or array with
-     *                        `disableFlag` key with middlewares to disable
-     *
+     * @param string $class Class name to retrieve config for
+     * @param string $name Optional class property to get
+     * @param int|true $excludeMiddleware Optional flag of middleware to disable.
+     * Passing in `true` disables all middleware.
+     * Can also pass in int flags to specify specific middlewares.
      * @return mixed
      */
-    public function get($class, $name = null, $options = 0);
+    public function get($class, $name = null, $excludeMiddleware = 0);
 
     /**
-     * Checks to see if a config item exists, or a field on that class
+     * Checks to see if a config item exists, or a property on that class
      *
-     * @param  string         $class
-     * @param  string         $name
-     * @param  array|int|bool $options Optional flag of middleware to disable. Passing in `true` disables
-     * all middleware. Can also pass in int flags, or array with `disableFlag` key with
-     * middlewares to disable
+     * @param string $class Class name to check config for
+     * @param string $name Optional class property to restrict check to
+     * @param int|true $excludeMiddleware Optional flag of middleware to disable.
+     * Passing in `true` disables all middleware.
+     * Can also pass in int flags to specify specific middlewares.
      * @return bool
      */
-    public function exists($class, $name = null, $options = 0);
+    public function exists($class, $name = null, $excludeMiddleware = 0);
 
     /**
      * Returns the entire metadata

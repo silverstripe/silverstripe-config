@@ -10,6 +10,7 @@ understood by many and to improve performance whilst keeping the powerful featur
 * [Manifesto](docs/manifesto.md)
 * [Architecture](docs/architecture.md)
 * [Transformers](docs/transformers.md)
+* [Middleware](docs/middleware.md)
 * [Usage](docs/usage.md)
 * [Testing](docs/testing.md)
 * [Glossary](docs/glossary.md)

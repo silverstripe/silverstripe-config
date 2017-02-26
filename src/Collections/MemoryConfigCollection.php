@@ -99,15 +99,15 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         return $this;
     }
 
-    public function get($class, $name = null, $options = 0)
+    public function get($class, $name = null, $excludeMiddleware = 0)
     {
-        if (!is_int($options) && $options !== true && !is_array($options)) {
-            throw new \InvalidArgumentException("Invalid config option: " . var_export($options, true));
+        if (!is_int($excludeMiddleware) && $excludeMiddleware !== true) {
+            throw new \InvalidArgumentException("Invalid middleware flags");
         }
 
         // Get config for complete class
         $class = strtolower($class);
-        $config = $this->getClassConfig($class, $options);
+        $config = $this->getClassConfig($class, $excludeMiddleware);
 
         // Return either name, or whole-class config
         if ($name) {
@@ -117,11 +117,15 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     }
 
     /**
-     * @param string $class
-     * @param mixed  $options
+     * Retrieve config for an entire class
+     *
+     * @param string $class Name of class
+     * @param int|true $excludeMiddleware Optional flag of middleware to disable.
+     * Passing in `true` disables all middleware.
+     * Can also pass in int flags to specify specific middlewares.
      * @return array|null
      */
-    protected function getClassConfig($class, $options)
+    protected function getClassConfig($class, $excludeMiddleware = 0)
     {
         $class = strtolower($class);
 
@@ -130,20 +134,19 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             return null;
         }
 
-        // check if middleware needs applying
-        $disableFlag = isset($options['disableFlag']) ? $options['disableFlag'] : $options;
-        if ($disableFlag === true) {
+        // `true` excludes all middleware, so bypass call cache
+        if ($excludeMiddleware === true) {
             return $this->config[$class];
         }
 
         // Check cache
-        if (isset($this->callCache[$class][$disableFlag])) {
-            return $this->callCache[$class][$disableFlag];
+        if (isset($this->callCache[$class][$excludeMiddleware])) {
+            return $this->callCache[$class][$excludeMiddleware];
         }
 
         // Build middleware
         $result = $this->callMiddleware(
-            $class, $options, function ($class, $options) {
+            $class, $excludeMiddleware, function ($class, $excludeMiddleware) {
                 $class = strtolower($class);
                 return isset($this->config[$class]) ? $this->config[$class] : [];
             }
@@ -153,13 +156,13 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         if (!isset($this->callCache[$class])) {
             $this->callCache[$class] = [];
         }
-        $this->callCache[$class][$disableFlag] = $result;
+        $this->callCache[$class][$excludeMiddleware] = $result;
         return $result;
     }
 
-    public function exists($class, $name = null, $options = 0)
+    public function exists($class, $name = null, $excludeMiddleware = 0)
     {
-        $config = $this->get($class, null, $options);
+        $config = $this->get($class, null, $excludeMiddleware);
         if (!isset($config)) {
             return false;
         }
