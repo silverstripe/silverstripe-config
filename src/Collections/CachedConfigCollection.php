@@ -38,6 +38,14 @@ class CachedConfigCollection implements ConfigCollectionInterface
     protected $flush = false;
 
     /**
+     * Set to true while building config.
+     * Used to protect against infinite loops.
+     *
+     * @var bool
+     */
+    protected $building = false;
+
+    /**
      * @return static
      */
     public static function create()
@@ -91,8 +99,18 @@ class CachedConfigCollection implements ConfigCollectionInterface
             return $this->collection;
         }
 
+        // Protect against infinity loop
+        if ($this->building) {
+            throw new BadMethodCallException("Infinite loop detected. Config could not be bootstrapped.");
+        }
+        $this->building = true;
+
         // Cache missed
-        $this->collection = call_user_func($this->collectionCreator);
+        try {
+            $this->collection = call_user_func($this->collectionCreator);
+        } finally {
+            $this->building = false;
+        }
 
         // Note: Config may be yet modified prior to deferred save, but after Core.php
         // however no formal api for this yet
