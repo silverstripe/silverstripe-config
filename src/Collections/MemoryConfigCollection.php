@@ -271,7 +271,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             $this->metadata,
             $this->trackMetadata,
             $this->middlewares
-        ) = $this->unserialize($serialized);
+        ) = unserialize($serialized);
     }
 
     public function nest()
