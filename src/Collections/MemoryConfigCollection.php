@@ -252,15 +252,15 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     public function serialize()
     {
-        return serialize(
-            [
+        return serialize([
             $this->config,
             $this->history,
             $this->metadata,
             $this->trackMetadata,
             $this->middlewares,
-            ]
-        );
+            $this->callCache
+        ]);
+
     }
 
     public function unserialize($serialized)
@@ -270,7 +270,8 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             $this->history,
             $this->metadata,
             $this->trackMetadata,
-            $this->middlewares
+            $this->middlewares,
+            $this->callCache
         ) = unserialize($serialized);
     }
 

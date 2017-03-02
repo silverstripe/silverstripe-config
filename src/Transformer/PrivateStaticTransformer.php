@@ -64,18 +64,23 @@ class PrivateStaticTransformer implements TransformerInterface
     {
         $reflection = new ReflectionClass($class);
 
-        /** @var ReflectionProperty[] **/
+        /** @var ReflectionProperty[] $props **/
         $props = $reflection->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
         foreach ($props as $prop) {
-            if (!$prop->isPrivate()) {
-                // Ignore anything which isn't private
+            // Check if this property is configurable
+            if (!$this->isConfigProperty($prop)) {
                 continue;
             }
 
+            // Note that some non-config private statics may be assigned
+            // un-serializable values. Detect these here
             $prop->setAccessible(true);
-            $classConfig[$prop->getName()] = $prop->getValue();
+            $value = $prop->getValue();
+            if ($this->isConfigValue($value)) {
+                $classConfig[$prop->getName()] = $value;
+            }
         }
 
         // Create the metadata for our new item
@@ -86,6 +91,49 @@ class PrivateStaticTransformer implements TransformerInterface
         ];
 
         return ['value' => $classConfig, 'metadata' => $metadata];
+    }
+
+    /**
+     * Is a var config or not?
+     *
+     * @param ReflectionProperty $prop
+     * @return bool
+     */
+    protected function isConfigProperty(ReflectionProperty $prop)
+    {
+        if (!$prop->isPrivate()) {
+            return false;
+        }
+        $annotations = $prop->getDocComment();
+        // Whitelist @config
+        if (strstr($annotations, '@config')) {
+            return true;
+        }
+        // Don't treat @internal as config
+        if (strstr($annotations, '@internal')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Detect if a value is a valid config
+     *
+     * @param mixed $input
+     * @return true
+     */
+    protected function isConfigValue($input) {
+        if (is_object($input) || is_resource($input)) {
+            return false;
+        }
+        if (is_array($input)) {
+            foreach ($input as $next) {
+                if (!$this->isConfigValue($next)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
