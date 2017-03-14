@@ -3,13 +3,11 @@
 namespace SilverStripe\Config\Tests\Collections;
 
 use BadMethodCallException;
-use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Config\Collections\CachedConfigCollection;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Prophet;
-use Psr\Cache\CacheItemPoolInterface;
-use Psr\Cache\CacheItemInterface;
 use SilverStripe\Config\Collections\ConfigCollectionInterface;
 
 class CachedConfigCollectionTest extends TestCase
@@ -34,40 +32,30 @@ class CachedConfigCollectionTest extends TestCase
      */
     public function testCacheHit()
     {
-        /** @var CacheItemPoolInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheItemPoolInterface::class);
+        /** @var CacheInterface|ObjectProphecy $mockCache */
+        $mockCache = $this->prophet->prophesize(CacheInterface::class);
 
         /** @var ConfigCollectionInterface|ObjectProphecy $mockCollection */
         $mockCollection = $this->prophet->prophesize(ConfigCollectionInterface::class);
         $mockCollection->get('test', 'name', 0)->willReturn('value');
         $mockCollection->exists('test', 'name', 0)->willReturn(true);
 
-        // Mock item for collection key
-        /** @var CacheItemInterface|ObjectProphecy $mockCacheItem */
-        $mockCacheItem = $this->prophet->prophesize(CacheItemInterface::class);
-        $mockCacheItem
-            ->get()
+        // Get will return hit
+        $mockCache
+            ->get(CachedConfigCollection::CACHE_KEY)
             ->willReturn($mockCollection->reveal())
             ->shouldBeCalled();
-        $mockCacheItem
-            ->isHit()
-            ->willReturn(true)
-            ->shouldBeCalled();
-        $mockCacheItem->set($mockCollection->reveal())->shouldBeCalled();
 
+        // Set called in __destruct
         $mockCache
-            ->getItem(CachedConfigCollection::CACHE_KEY)
-            ->willReturn($mockCacheItem->reveal())
-            ->shouldBeCalled();
-
-        // In __destruct cache is saved
-        $mockCache->save($mockCacheItem->reveal())->shouldBeCalledTimes(1);
+            ->set(CachedConfigCollection::CACHE_KEY, $mockCollection->reveal())
+            ->shouldBeCalledTimes(1);
 
         $collection = new CachedConfigCollection();
         $collection->setCollectionCreator(function(){
             $this->fail("Invalid cache miss");
         });
-        $collection->setPool($mockCache->reveal());
+        $collection->setCache($mockCache->reveal());
 
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
@@ -79,16 +67,13 @@ class CachedConfigCollectionTest extends TestCase
 
     public function testCacheMiss()
     {
-        /** @var CacheItemPoolInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheItemPoolInterface::class);
+        /** @var CacheInterface|ObjectProphecy $mockCache */
+        $mockCache = $this->prophet->prophesize(CacheInterface::class);
 
-        // Mock item for collection key
-        /** @var CacheItemInterface|ObjectProphecy $mockCacheItem */
-        $mockCacheItem = $this->prophet->prophesize(CacheItemInterface::class);
-        $mockCacheItem->get()->shouldNotBeCalled();
-        $mockCacheItem
-            ->isHit()
-            ->willReturn(false)
+        // Miss
+        $mockCache
+            ->get(CachedConfigCollection::CACHE_KEY)
+            ->willReturn(null)
             ->shouldBeCalled();
 
         /** @var ConfigCollectionInterface|ObjectProphecy $mockCollection */
@@ -96,22 +81,16 @@ class CachedConfigCollectionTest extends TestCase
         $mockCollection->get('test', 'name', 0)->willReturn('value');
         $mockCollection->exists('test', 'name', 0)->willReturn(true);
 
-        // Save immediately, save again on __destruct
-        $mockCacheItem->set($mockCollection->reveal())->shouldBeCalledTimes(2);
-
+        // Cache will be generated, saved, and then saved again on __destruct()
         $mockCache
-            ->getItem(CachedConfigCollection::CACHE_KEY)
-            ->willReturn($mockCacheItem->reveal())
-            ->shouldBeCalled();
-
-        // Save immediately after generating, save again on __destruct
-        $mockCache->save($mockCacheItem->reveal())->shouldBeCalledTimes(2);
+            ->set(CachedConfigCollection::CACHE_KEY, $mockCollection->reveal())
+            ->shouldBeCalledTimes(2);
 
         $collection = new CachedConfigCollection();
         $collection->setCollectionCreator(function() use ($mockCollection) {
             return $mockCollection->reveal();
         });
-        $collection->setPool($mockCache->reveal());
+        $collection->setCache($mockCache->reveal());
 
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
@@ -121,30 +100,22 @@ class CachedConfigCollectionTest extends TestCase
         $collection->__destruct();
     }
 
-    public function testInifiniteLoop()
+    public function testInfiniteLoop()
     {
-        $this->setExpectedException(
-            BadMethodCallException::class,
-            "Infinite loop detected. Config could not be bootstrapped."
-        );
+        $this->expectException(BadMethodCallException::class);
+        $this->expectExceptionMessage("Infinite loop detected. Config could not be bootstrapped.");
 
         // Mock cache
-        /** @var CacheItemPoolInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheItemPoolInterface::class);
-        /** @var CacheItemInterface|ObjectProphecy $mockCacheItem */
-        $mockCacheItem = $this->prophet->prophesize(CacheItemInterface::class);
+        /** @var CacheInterface|ObjectProphecy $mockCache */
+        $mockCache = $this->prophet->prophesize(CacheInterface::class);
         $mockCache
-            ->getItem(CachedConfigCollection::CACHE_KEY)
-            ->willReturn($mockCacheItem->reveal())
-            ->shouldBeCalled();
-        $mockCacheItem
-            ->isHit()
-            ->willReturn(false)
+            ->get(CachedConfigCollection::CACHE_KEY)
+            ->willReturn(null)
             ->shouldBeCalled();
 
         // Build new config
         $collection = new CachedConfigCollection();
-        $collection->setPool($mockCache->reveal());
+        $collection->setCache($mockCache->reveal());
         $collection->setCollectionCreator(function() use ($collection) {
             $collection->getCollection();
         });

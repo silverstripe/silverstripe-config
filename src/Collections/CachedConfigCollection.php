@@ -3,8 +3,8 @@
 namespace SilverStripe\Config\Collections;
 
 use BadMethodCallException;
+use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Config\Middleware\MiddlewareAware;
-use Psr\Cache\CacheItemPoolInterface;
 
 class CachedConfigCollection implements ConfigCollectionInterface
 {
@@ -16,9 +16,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
     const CACHE_KEY = '__CACHE__';
 
     /**
-     * @var CacheItemPoolInterface
+     * @var CacheInterface
      */
-    protected $pool;
+    protected $cache;
 
     /**
      * Nested config to delegate to
@@ -90,13 +90,12 @@ class CachedConfigCollection implements ConfigCollectionInterface
             return $this->collection;
         }
 
-        // Init cached item
-        $collectionCacheItem = $this->pool->getItem(self::CACHE_KEY);
-
         // Load from cache (unless flushing)
-        if (!$this->flush && $collectionCacheItem->isHit()) {
-            $this->collection = $collectionCacheItem->get();
-            return $this->collection;
+        if (!$this->flush) {
+            $this->collection = $this->cache->get(self::CACHE_KEY);
+            if ($this->collection) {
+                return $this->collection;
+            }
         }
 
         // Protect against infinity loop
@@ -112,13 +111,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
             $this->building = false;
         }
 
-        // Note: Config may be yet modified prior to deferred save, but after Core.php
-        // however no formal api for this yet
-        $collectionCacheItem->set($this->collection);
-
         // Save immediately.
         // Note additional deferred save will occur in _destruct()
-        $this->pool->save($collectionCacheItem);
+        $this->cache->set(self::CACHE_KEY, $this->collection);
         return $this->collection;
     }
 
@@ -129,9 +124,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
     {
         // Ensure back-end cache is updated
         if ($this->collection) {
-            $cacheItem = $this->pool->getItem(self::CACHE_KEY);
-            $cacheItem->set($this->collection);
-            $this->pool->save($cacheItem);
+            $this->cache->set(self::CACHE_KEY, $this->collection);
 
             // Prevent double-destruct
             $this->collection = null;
@@ -144,16 +137,16 @@ class CachedConfigCollection implements ConfigCollectionInterface
     }
 
     /**
-     * Set a pool
+     * Set a PSR-16 cache
      *
-     * @param  CacheItemPoolInterface $pool
+     * @param CacheInterface $cache
      * @return $this
      */
-    public function setPool(CacheItemPoolInterface $pool)
+    public function setCache(CacheInterface $cache)
     {
-        $this->pool = $pool;
+        $this->cache = $cache;
         if ($this->flush) {
-            $pool->clear();
+            $cache->clear();
         }
         return $this;
     }
@@ -177,11 +170,11 @@ class CachedConfigCollection implements ConfigCollectionInterface
     }
 
     /**
-     * @return CacheItemPoolInterface
+     * @return CacheInterface
      */
-    public function getPool()
+    public function getCache()
     {
-        return $this->pool;
+        return $this->cache;
     }
 
     /**
@@ -191,8 +184,8 @@ class CachedConfigCollection implements ConfigCollectionInterface
     public function setFlush($flush)
     {
         $this->flush = $flush;
-        if ($flush && $this->pool) {
-            $this->pool->clear();
+        if ($flush && $this->cache) {
+            $this->cache->clear();
         }
         return $this;
     }
