@@ -1,6 +1,6 @@
 {
   "name": "silverstripe/config",
-  "description": "SilverStripe configuration based on YAML and class statics Edit",
+  "description": "SilverStripe configuration based on YAML and class statics",
   "license": "BSD-3-Clause",
   "require": {
     "symfony/finder": "^v2.8",
