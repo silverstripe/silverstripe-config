@@ -5,6 +5,7 @@ namespace SilverStripe\Config\Transformer;
 use SilverStripe\Config\Collections\MutableConfigCollectionInterface;
 use ReflectionClass;
 use ReflectionProperty;
+use LogicException;
 
 class PrivateStaticTransformer implements TransformerInterface
 {
@@ -102,6 +103,22 @@ class PrivateStaticTransformer implements TransformerInterface
     protected function isConfigProperty(ReflectionProperty $prop)
     {
         if (!$prop->isPrivate()) {
+            // If this non-private static overrides any private configs, make this an error
+            $class = $prop->getDeclaringClass();
+            while ($class = $class->getParentClass()) {
+                if (!$class->hasProperty($prop->getName())) {
+                    continue;
+                }
+                $parentProp = $class->getProperty($prop->getName());
+                if (!$parentProp->isPrivate()) {
+                    continue;
+                }
+                throw new LogicException(
+                    $prop->getDeclaringClass()->getName().'::'.$prop->getName()
+                    . ' is not private but overrides a private static config in parent class '
+                    . $class->getName()
+                );
+            }
             return false;
         }
         $annotations = $prop->getDocComment();
