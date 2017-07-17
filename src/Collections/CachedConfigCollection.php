@@ -204,4 +204,15 @@ class CachedConfigCollection implements ConfigCollectionInterface
             "Please apply middleware to collection factory via setCollectionCreator()"
         );
     }
+
+    /**
+     * @deprecated 4.0...5.0 Please use YAML configuration, ::modify()->set() or ::modify()->merge()
+     * @throws BadMethodCallException
+     */
+    public function update($class, $name, $value)
+    {
+        throw new BadMethodCallException(
+            'Config::inst()->update() is deprecated. Please use YAML configuration, Config::modify()->merge() or ->set()'
+        );
+    }
 }
