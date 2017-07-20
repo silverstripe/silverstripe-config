@@ -146,7 +146,9 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
         // Build middleware
         $result = $this->callMiddleware(
-            $class, $excludeMiddleware, function ($class, $excludeMiddleware) {
+            $class,
+            $excludeMiddleware,
+            function ($class, $excludeMiddleware) {
                 $class = strtolower($class);
                 return isset($this->config[$class]) ? $this->config[$class] : [];
             }
@@ -260,7 +262,6 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             $this->middlewares,
             $this->callCache
         ]);
-
     }
 
     public function unserialize($serialized)
@@ -298,7 +299,8 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             }
 
             array_unshift(
-                $this->history[$class], [
+                $this->history[$class],
+                [
                 'value' => $this->config[$class],
                 'metadata' => $this->metadata[$class]
                 ]

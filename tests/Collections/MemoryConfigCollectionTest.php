@@ -89,5 +89,4 @@ class MemoryConfigCollectionTest extends TestCase
             $collection->getHistory()
         );
     }
-
 }
