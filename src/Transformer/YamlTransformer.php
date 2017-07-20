@@ -432,7 +432,9 @@ class YamlTransformer implements TransformerInterface
         $patternRegExp = '%^'.implode(
             '[^\.][a-zA-Z0-9\-_\/\.]+',
             array_map(
-                function($part) { return preg_quote($part, '%'); },
+                function ($part) {
+                    return preg_quote($part, '%');
+                },
                 explode('*', $pattern)
             )
         ).'%';
@@ -545,46 +547,80 @@ class YamlTransformer implements TransformerInterface
             throw new Exception(sprintf('\'%s\' statements must be an array', $flag));
         }
 
-        foreach ($header[$flag] as $rule => $params) {
+        return $this->evaluateConditions($header[$flag], $flag, function ($rule, $params) use ($flag) {
+            // Skip ignored rules
             if ($this->isRuleIgnored($rule)) {
-                // If checking only, then return true. Otherwise, return false.
-                return $flag === self::ONLY_FLAG;
+                return null;
             }
 
-            if (!$this->testSingleRule($rule, $params)) {
-                return false;
-            }
-        }
-
-        return true;
+            return $this->testSingleRule($rule, $params, $flag);
+        });
     }
 
     /**
      * Tests a rule against the given expected result.
      *
-     * @param  string       $rule
-     * @param  string|array $params
+     * @param string $rule
+     * @param string|array $params
+     * @param string $flag
      * @return bool
      * @throws Exception
      */
-    protected function testSingleRule($rule, $params)
+    protected function testSingleRule($rule, $params, $flag = self::ONLY_FLAG)
     {
         $rule = strtolower($rule);
         if (!$this->hasRule($rule)) {
             throw new Exception(sprintf('Rule \'%s\' doesn\'t exist.', $rule));
         }
+        $ruleCallback = $this->rules[$rule];
 
+        // Expand single rule into array
         if (!is_array($params)) {
-            return $this->rules[$rule]($params);
+            $params = [$params];
         }
 
-        // If its an array, we'll loop through each parameter
-        foreach ($params as $key => $value) {
-            if (!$this->rules[$rule]($key, $value)) {
+        // Evaluate all rules
+        return $this->evaluateConditions($params, $flag, function ($key, $value) use ($ruleCallback) {
+            // Don't treat keys as argument if numeric
+            if (is_numeric($key)) {
+                return $ruleCallback($value);
+            }
+
+            return $ruleCallback($key, $value);
+        });
+    }
+
+    /**
+     * Evaluate condition against a set of data using the appropriate conjuction for the flag
+     *
+     * @param array $source Items to apply condition to
+     * @param string $flag Flag type
+     * @param callable $condition Callback to evaluate each item in the $source. Both key and value
+     * of each item in $source will be passed as arguments. This callback should return true, false,
+     * or null to skip
+     * @return bool Evaluation of the applied condition
+     */
+    protected function evaluateConditions($source, $flag, $condition)
+    {
+        foreach ($source as $key => $value) {
+            $result = $condition($key, $value);
+
+            // Skip if null
+            if ($result === null) {
+                continue;
+            }
+
+            // Only fails if any are false
+            if ($flag === self::ONLY_FLAG && !$result) {
                 return false;
+            }
+            // Except succeeds if any true
+            if ($flag === self::EXCEPT_FLAG && $result) {
+                return true;
             }
         }
 
-        return true;
+        // Default based on flag
+        return $flag === self::ONLY_FLAG;
     }
 }

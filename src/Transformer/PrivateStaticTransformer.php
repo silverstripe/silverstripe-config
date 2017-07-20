@@ -139,7 +139,8 @@ class PrivateStaticTransformer implements TransformerInterface
      * @param mixed $input
      * @return true
      */
-    protected function isConfigValue($input) {
+    protected function isConfigValue($input)
+    {
         if (is_object($input) || is_resource($input)) {
             return false;
         }
