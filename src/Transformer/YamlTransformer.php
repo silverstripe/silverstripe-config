@@ -211,8 +211,15 @@ class YamlTransformer implements TransformerInterface
 
             // Check if a document with that name already exists
             if (isset($documents[$header['name']])) {
+                $filename = $document['filename'];
+                $otherFilename = $documents[$header['name']]['filename'];
                 throw new Exception(
-                    sprintf('More than one YAML document exists named \'%s\'.', $header['name'])
+                    sprintf(
+                        'More than one YAML document exists named \'%s\' in \'%s\' and \'%s\'',
+                        $header['name'],
+                        $filename,
+                        $otherFilename
+                    )
                 );
             }
 
