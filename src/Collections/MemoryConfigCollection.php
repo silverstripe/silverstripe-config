@@ -77,25 +77,20 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     public function set($class, $name, $data, $metadata = [])
     {
-        $class = strtolower($class);
         $this->saveMetadata($class, $metadata);
 
+        $classKey = strtolower($class);
         if ($name) {
-            if (!isset($this->config[$class])) {
-                $this->config[$class] = [];
+            if (!isset($this->config[$classKey])) {
+                $this->config[$classKey] = [];
             }
-            $this->config[$class][$name] = $data;
+            $this->config[$classKey][$name] = $data;
         } else {
-            $this->config[$class] = $data;
+            $this->config[$classKey] = $data;
         }
 
-        // Flush call cache for this class, and any subclasses
-        unset($this->callCache[$class]);
-        foreach ($this->callCache as $nextClass => $data) {
-            if (is_subclass_of($nextClass, $class, true)) {
-                unset($this->callCache[$nextClass]);
-            }
-        }
+        // Flush call cache
+        $this->callCache = [];
         return $this;
     }
 
@@ -106,7 +101,6 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         }
 
         // Get config for complete class
-        $class = strtolower($class);
         $config = $this->getClassConfig($class, $excludeMiddleware);
 
         // Return either name, or whole-class config
@@ -127,21 +121,21 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      */
     protected function getClassConfig($class, $excludeMiddleware = 0)
     {
-        $class = strtolower($class);
+        $classKey = strtolower($class);
 
         // Can't apply middleware to config on non-existant class
-        if (!isset($this->config[$class])) {
+        if (!isset($this->config[$classKey])) {
             return null;
         }
 
         // `true` excludes all middleware, so bypass call cache
         if ($excludeMiddleware === true) {
-            return $this->config[$class];
+            return $this->config[$classKey];
         }
 
         // Check cache
-        if (isset($this->callCache[$class][$excludeMiddleware])) {
-            return $this->callCache[$class][$excludeMiddleware];
+        if (isset($this->callCache[$classKey][$excludeMiddleware])) {
+            return $this->callCache[$classKey][$excludeMiddleware];
         }
 
         // Build middleware
@@ -149,16 +143,18 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             $class,
             $excludeMiddleware,
             function ($class, $excludeMiddleware) {
-                $class = strtolower($class);
-                return isset($this->config[$class]) ? $this->config[$class] : [];
+                $classKey = strtolower($class);
+                return isset($this->config[$classKey])
+                    ? $this->config[$classKey]
+                    : [];
             }
         );
 
         // Save cache
-        if (!isset($this->callCache[$class])) {
-            $this->callCache[$class] = [];
+        if (!isset($this->callCache[$classKey])) {
+            $this->callCache[$classKey] = [];
         }
-        $this->callCache[$class][$excludeMiddleware] = $result;
+        $this->callCache[$classKey][$excludeMiddleware] = $result;
         return $result;
     }
 
@@ -176,14 +172,14 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     public function remove($class, $name = null)
     {
-        $class = strtolower($class);
+        $classKey = strtolower($class);
         if ($name) {
-            unset($this->config[$class][$name]);
+            unset($this->config[$classKey][$name]);
         } else {
-            unset($this->config[$class]);
+            unset($this->config[$classKey]);
         }
         // Discard call cache
-        unset($this->callCache[$class]);
+        unset($this->callCache[$classKey]);
         return $this;
     }
 
@@ -293,20 +289,21 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             return;
         }
 
-        if (isset($this->metadata[$class]) && isset($this->config[$class])) {
-            if (!isset($this->history[$class])) {
-                $this->history[$class] = [];
+        $classKey = strtolower($class);
+        if (isset($this->metadata[$classKey]) && isset($this->config[$classKey])) {
+            if (!isset($this->history[$classKey])) {
+                $this->history[$classKey] = [];
             }
 
             array_unshift(
-                $this->history[$class],
+                $this->history[$classKey],
                 [
-                'value' => $this->config[$class],
-                'metadata' => $this->metadata[$class]
+                'value' => $this->config[$classKey],
+                'metadata' => $this->metadata[$classKey]
                 ]
             );
         }
 
-        $this->metadata[$class] = $metadata;
+        $this->metadata[$classKey] = $metadata;
     }
 }
