@@ -117,20 +117,14 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * @param int|true $excludeMiddleware Optional flag of middleware to disable.
      * Passing in `true` disables all middleware.
      * Can also pass in int flags to specify specific middlewares.
-     * @return array|null
+     * @return array
      */
     protected function getClassConfig($class, $excludeMiddleware = 0)
     {
-        $classKey = strtolower($class);
-
-        // Can't apply middleware to config on non-existant class
-        if (!isset($this->config[$classKey])) {
-            return null;
-        }
-
         // `true` excludes all middleware, so bypass call cache
+        $classKey = strtolower($class);
         if ($excludeMiddleware === true) {
-            return $this->config[$classKey];
+            return isset($this->config[$classKey]) ? $this->config[$classKey] : [];
         }
 
         // Check cache
@@ -143,10 +137,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             $class,
             $excludeMiddleware,
             function ($class, $excludeMiddleware) {
-                $classKey = strtolower($class);
-                return isset($this->config[$classKey])
-                    ? $this->config[$classKey]
-                    : [];
+                return $this->getClassConfig($class, true);
             }
         );
 
@@ -161,7 +152,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     public function exists($class, $name = null, $excludeMiddleware = 0)
     {
         $config = $this->get($class, null, $excludeMiddleware);
-        if (!isset($config)) {
+        if (empty($config)) {
             return false;
         }
         if ($name) {
@@ -248,28 +239,35 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         return $this->history;
     }
 
+    /**
+     * Get list of serialized properties
+     *
+     * @return array
+     */
+    protected function getSerializedMembers()
+    {
+        return array_filter(array_keys(get_object_vars($this)), function ($key) {
+            // Skip $_underscoreProp
+            return strpos($key, '_') !== 0;
+        });
+    }
+
     public function serialize()
     {
-        return serialize([
-            $this->config,
-            $this->history,
-            $this->metadata,
-            $this->trackMetadata,
-            $this->middlewares,
-            $this->callCache
-        ]);
+        // Auto-serialize
+        $data = [];
+        foreach ($this->getSerializedMembers() as $key) {
+            $data[$key] = $this->$key;
+        }
+        return serialize($data);
     }
 
     public function unserialize($serialized)
     {
-        list(
-            $this->config,
-            $this->history,
-            $this->metadata,
-            $this->trackMetadata,
-            $this->middlewares,
-            $this->callCache
-        ) = unserialize($serialized);
+        $data = unserialize($serialized);
+        foreach ($this->getSerializedMembers() as $key) {
+            $this->$key = isset($data[$key]) ? $data[$key] : null;
+        }
     }
 
     public function nest()

@@ -49,7 +49,8 @@ interface ConfigCollectionInterface
 
     /**
      * Get nested version of this config,
-     * which is a duplicated version of this config.
+     * which is normally duplicated version of this config,
+     * but could be a subclass.
      *
      * @return static
      */
