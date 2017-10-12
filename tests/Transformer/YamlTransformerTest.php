@@ -82,8 +82,7 @@ class YamlTransformerTest extends TestCase
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
     }
@@ -113,8 +112,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -144,8 +142,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -180,8 +177,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -223,8 +219,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -254,8 +249,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -289,8 +283,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -308,8 +301,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $collection->transform([$transformer]);
 
@@ -341,8 +333,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
 
         $this->expectException(CircularDependencyException::class);
@@ -381,11 +372,11 @@ YAML;
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $yaml->addRule(
-            'testcase', function () {
+            'testcase',
+            function () {
                 return true;
             }
         );
@@ -428,16 +419,17 @@ YAML;
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $yaml->addRule(
-            'testcase1', function () {
+            'testcase1',
+            function () {
                 return true;
             }
         );
         $yaml->addRule(
-            'testcase2', function () {
+            'testcase2',
+            function () {
                 return true;
             }
         );
@@ -456,53 +448,105 @@ YAML;
 ---
 name: 'test'
 ---
-test: 'test'
+test: 'test-original'
 
 ---
-name: 'dontapply'
+name: 'test-override'
 after: 'test'
-Only:
-  testcase1: false
-  testcas2: true
+Except:
+  mustbefalse: true
+  mustbetrue: false
 ---
-test: 'not applied'
+test: 'test-success'
 
 ---
-name: 'override'
-Except:
-  testcase1: false
+name: 'test-dontapply'
+after:
+  - 'test'
+  - 'test-override'
+Only:
+  mustbefalse: false
+  mustbetrue: false
 ---
-test: 'overwritten'
+test: 'test-error'
 
 ---
 name: included
 Only:
-  testcase2: true
+  mustbetrue: true
 ---
-test2: test2
+test2: 'test2-original'
+
+---
+name: includedsuccess
+after: included
+Only:
+  mustbetrue:
+    - true
+    - true
+  mustbefalse:
+    - false
+    - false
+Except:
+  mustbetrue:
+    - false
+    - false
+  mustbefalse:
+    - true
+    - true
+---
+test2: 'test2-success'
+
+---
+name: includednotapplied
+after: includedsuccess
+# Except prevents application here because one except is true
+Except:
+  mustbefalse:
+    - true
+    - false
+Only:
+  mustbetrue: true
+---
+test2: 'test2-except-error'
+
+---
+name: alsoincludednotapplied
+after: includedsuccess
+# Only prevents application here because one only is false
+Except:
+  mustbefalse: true
+Only:
+  mustbetrue:
+    - true
+    - false
+---
+test2: 'test2-only-error'
+
 YAML;
         file_put_contents($this->getFilePath('config.yml'), $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $yaml->addRule(
-            'testcase1', function () {
-                return false;
+            'mustbefalse',
+            function ($val) {
+                return $val === false;
             }
         );
         $yaml->addRule(
-            'testcase2', function () {
-                return true;
+            'mustbetrue',
+            function ($val) {
+                return $val === true;
             }
         );
         $collection->transform([$yaml]);
 
-        $this->assertEquals('overwritten', $collection->get('test'));
-        $this->assertEquals('test2', $collection->get('test2'));
+        $this->assertEquals('test-success', $collection->get('test'));
+        $this->assertEquals('test2-success', $collection->get('test2'));
     }
 
     public function testIgnoredOnlyExceptRule()
@@ -525,11 +569,11 @@ YAML;
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
         $yaml->addRule(
-            'testcase', function () {
+            'testcase',
+            function () {
                 return false;
             }
         );
@@ -578,8 +622,7 @@ YAML;
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
             $this->getConfigDirectory(),
-            $this->getFinder(),
-            $collection
+            $this->getFinder()
         );
 
         $testData = [
@@ -588,7 +631,8 @@ YAML;
             'arraykey' => ['test' => 'test'],
         ];
         $yaml->addRule(
-            'testcase', function ($key, $value) use ($testData) {
+            'testcase',
+            function ($key, $value) use ($testData) {
                 return ($testData[$key] === $value);
             }
         );

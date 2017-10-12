@@ -19,7 +19,7 @@ class MemoryConfigCollectionTest extends TestCase
 
         $collection->remove('test');
         $this->assertFalse($collection->exists('test'));
-        $this->assertNull($collection->get('test'));
+        $this->assertEquals([], $collection->get('test'));
 
         $collection->removeAll();
         $this->assertFalse($collection->exists('test2'));
@@ -89,5 +89,4 @@ class MemoryConfigCollectionTest extends TestCase
             $collection->getHistory()
         );
     }
-
 }

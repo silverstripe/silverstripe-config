@@ -2,8 +2,11 @@
 
 namespace SilverStripe\Config\Tests\Transformer;
 
+use LogicException;
 use SilverStripe\Config\Tests\PrivateStaticTransformerTest\ClassA;
 use SilverStripe\Config\Tests\PrivateStaticTransformerTest\ClassB;
+use SilverStripe\Config\Tests\PrivateStaticTransformerTest\ClassK;
+use SilverStripe\Config\Tests\PrivateStaticTransformerTest\ClassL;
 use SilverStripe\Config\Transformer\PrivateStaticTransformer;
 use SilverStripe\Config\Collections\MemoryConfigCollection;
 use PHPUnit\Framework\TestCase;
@@ -81,7 +84,7 @@ class PrivateStaticTransformerTest extends TestCase
     public function testInvalidClass()
     {
         $class = 'SomeNonExistentClass';
-        if(class_exists($class)) {
+        if (class_exists($class)) {
             $this->markTestSkipped($class . ' exists but the test expects it not to.');
         }
 
@@ -91,4 +94,20 @@ class PrivateStaticTransformerTest extends TestCase
         $this->assertFalse($collection->exists($class));
     }
 
+
+    public function testInvalidConfigError()
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage(
+            ClassL::class . '::option is not private but overrides a private static '
+            . 'config in parent class ' . ClassK::class
+        );
+        $classes = [
+            ClassK::class,
+            ClassL::class,
+        ];
+        $collection = new MemoryConfigCollection;
+        $transformer = new PrivateStaticTransformer($classes, $collection);
+        $collection->transform([$transformer]);
+    }
 }

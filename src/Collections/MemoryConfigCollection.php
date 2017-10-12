@@ -77,25 +77,20 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     public function set($class, $name, $data, $metadata = [])
     {
-        $class = strtolower($class);
         $this->saveMetadata($class, $metadata);
 
+        $classKey = strtolower($class);
         if ($name) {
-            if (!isset($this->config[$class])) {
-                $this->config[$class] = [];
+            if (!isset($this->config[$classKey])) {
+                $this->config[$classKey] = [];
             }
-            $this->config[$class][$name] = $data;
+            $this->config[$classKey][$name] = $data;
         } else {
-            $this->config[$class] = $data;
+            $this->config[$classKey] = $data;
         }
 
-        // Flush call cache for this class, and any subclasses
-        unset($this->callCache[$class]);
-        foreach ($this->callCache as $nextClass => $data) {
-            if (is_subclass_of($nextClass, $class, true)) {
-                unset($this->callCache[$nextClass]);
-            }
-        }
+        // Flush call cache
+        $this->callCache = [];
         return $this;
     }
 
@@ -106,7 +101,6 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         }
 
         // Get config for complete class
-        $class = strtolower($class);
         $config = $this->getClassConfig($class, $excludeMiddleware);
 
         // Return either name, or whole-class config
@@ -123,47 +117,42 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * @param int|true $excludeMiddleware Optional flag of middleware to disable.
      * Passing in `true` disables all middleware.
      * Can also pass in int flags to specify specific middlewares.
-     * @return array|null
+     * @return array
      */
     protected function getClassConfig($class, $excludeMiddleware = 0)
     {
-        $class = strtolower($class);
-
-        // Can't apply middleware to config on non-existant class
-        if (!isset($this->config[$class])) {
-            return null;
-        }
-
         // `true` excludes all middleware, so bypass call cache
+        $classKey = strtolower($class);
         if ($excludeMiddleware === true) {
-            return $this->config[$class];
+            return isset($this->config[$classKey]) ? $this->config[$classKey] : [];
         }
 
         // Check cache
-        if (isset($this->callCache[$class][$excludeMiddleware])) {
-            return $this->callCache[$class][$excludeMiddleware];
+        if (isset($this->callCache[$classKey][$excludeMiddleware])) {
+            return $this->callCache[$classKey][$excludeMiddleware];
         }
 
         // Build middleware
         $result = $this->callMiddleware(
-            $class, $excludeMiddleware, function ($class, $excludeMiddleware) {
-                $class = strtolower($class);
-                return isset($this->config[$class]) ? $this->config[$class] : [];
+            $class,
+            $excludeMiddleware,
+            function ($class, $excludeMiddleware) {
+                return $this->getClassConfig($class, true);
             }
         );
 
         // Save cache
-        if (!isset($this->callCache[$class])) {
-            $this->callCache[$class] = [];
+        if (!isset($this->callCache[$classKey])) {
+            $this->callCache[$classKey] = [];
         }
-        $this->callCache[$class][$excludeMiddleware] = $result;
+        $this->callCache[$classKey][$excludeMiddleware] = $result;
         return $result;
     }
 
     public function exists($class, $name = null, $excludeMiddleware = 0)
     {
         $config = $this->get($class, null, $excludeMiddleware);
-        if (!isset($config)) {
+        if (empty($config)) {
             return false;
         }
         if ($name) {
@@ -174,14 +163,14 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     public function remove($class, $name = null)
     {
-        $class = strtolower($class);
+        $classKey = strtolower($class);
         if ($name) {
-            unset($this->config[$class][$name]);
+            unset($this->config[$classKey][$name]);
         } else {
-            unset($this->config[$class]);
+            unset($this->config[$classKey]);
         }
         // Discard call cache
-        unset($this->callCache[$class]);
+        unset($this->callCache[$classKey]);
         return $this;
     }
 
@@ -250,29 +239,35 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         return $this->history;
     }
 
+    /**
+     * Get list of serialized properties
+     *
+     * @return array
+     */
+    protected function getSerializedMembers()
+    {
+        return array_filter(array_keys(get_object_vars($this)), function ($key) {
+            // Skip $_underscoreProp
+            return strpos($key, '_') !== 0;
+        });
+    }
+
     public function serialize()
     {
-        return serialize([
-            $this->config,
-            $this->history,
-            $this->metadata,
-            $this->trackMetadata,
-            $this->middlewares,
-            $this->callCache
-        ]);
-
+        // Auto-serialize
+        $data = [];
+        foreach ($this->getSerializedMembers() as $key) {
+            $data[$key] = $this->$key;
+        }
+        return serialize($data);
     }
 
     public function unserialize($serialized)
     {
-        list(
-            $this->config,
-            $this->history,
-            $this->metadata,
-            $this->trackMetadata,
-            $this->middlewares,
-            $this->callCache
-        ) = unserialize($serialized);
+        $data = unserialize($serialized);
+        foreach ($this->getSerializedMembers() as $key) {
+            $this->$key = isset($data[$key]) ? $data[$key] : null;
+        }
     }
 
     public function nest()
@@ -292,19 +287,21 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             return;
         }
 
-        if (isset($this->metadata[$class]) && isset($this->config[$class])) {
-            if (!isset($this->history[$class])) {
-                $this->history[$class] = [];
+        $classKey = strtolower($class);
+        if (isset($this->metadata[$classKey]) && isset($this->config[$classKey])) {
+            if (!isset($this->history[$classKey])) {
+                $this->history[$classKey] = [];
             }
 
             array_unshift(
-                $this->history[$class], [
-                'value' => $this->config[$class],
-                'metadata' => $this->metadata[$class]
+                $this->history[$classKey],
+                [
+                'value' => $this->config[$classKey],
+                'metadata' => $this->metadata[$classKey]
                 ]
             );
         }
 
-        $this->metadata[$class] = $metadata;
+        $this->metadata[$classKey] = $metadata;
     }
 }

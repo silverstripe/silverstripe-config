@@ -46,11 +46,41 @@ class CachedConfigCollection implements ConfigCollectionInterface
     protected $building = false;
 
     /**
+     * Injectable factory for nesting config.
+     * This callback will be passed the inner ConfigCollection
+     *
+     * @var callable
+     */
+    protected $nestFactory = null;
+
+    /**
      * @return static
      */
     public static function create()
     {
         return new static();
+    }
+
+    /**
+     * Get callback for nesting the inner collection
+     *
+     * @return callable
+     */
+    public function getNestFactory()
+    {
+        return $this->nestFactory;
+    }
+
+    /**
+     * Set callback for nesting the inner collection
+     *
+     * @param callable $factory
+     * @return $this
+     */
+    public function setNestFactory(callable $factory)
+    {
+        $this->nestFactory = $factory;
+        return $this;
     }
 
     public function get($class, $name = null, $excludeMiddleware = 0)
@@ -133,7 +163,14 @@ class CachedConfigCollection implements ConfigCollectionInterface
 
     public function nest()
     {
-        return $this->getCollection()->nest();
+        $collection = $this->getCollection();
+        $factory = $this->getNestFactory();
+        if ($factory) {
+            return $factory($collection);
+        }
+
+        // Fall back to regular nest
+        return $collection->nest();
     }
 
     /**
