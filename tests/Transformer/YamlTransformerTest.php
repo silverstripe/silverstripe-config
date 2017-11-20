@@ -273,7 +273,7 @@ YAML;
         $content = <<<'YAML'
 ---
 name: test2
-before: 'test/*'
+before: 'test/*#test'
 ---
 test: 'should not overwrite'
 YAML;
@@ -289,6 +289,7 @@ YAML;
 
         $this->assertEquals('test', $collection->get('test'));
 
+        // this one is kind of moot because if the matching fails, it'll go after anyway...
         $content = <<<'YAML'
 ---
 name: test3

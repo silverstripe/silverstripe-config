@@ -428,7 +428,7 @@ class YamlTransformer implements TransformerInterface
         // and check their filename and maybe their document name, depending on the pattern.
         // We don't want to do any pattern matching after the first hash as the document name
         // is assumed to follow it.
-        $firstHash = strpos('#', $pattern);
+        $firstHash = strpos($pattern, '#');
         $documentName = false;
         if ($firstHash !== false) {
             $documentName = substr($pattern, $firstHash + 1);
@@ -445,6 +445,7 @@ class YamlTransformer implements TransformerInterface
                 explode('*', $pattern)
             )
         ).'%';
+
         $matchedDocuments = [];
         foreach ($documents as $document) {
             // Ensure filename is relative
