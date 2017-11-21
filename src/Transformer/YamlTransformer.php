@@ -436,7 +436,7 @@ class YamlTransformer implements TransformerInterface
         }
 
         // Replace all `*` with `[^\.][a-zA-Z0-9\-_\/\.]+`, and quote other characters
-        $patternRegExp = '%^'.implode(
+        $patternRegExp = '%(^|[/\\\\])'.implode(
             '[^\.][a-zA-Z0-9\-_\/\.]+',
             array_map(
                 function ($part) {

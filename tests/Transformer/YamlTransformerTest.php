@@ -309,6 +309,57 @@ YAML;
         $this->assertEquals('overwrite', $collection->get('test'));
     }
 
+    public function testBeforeAfterStatementWithNestedPath()
+    {
+        $content = <<<'YAML'
+---
+name: test
+---
+test: 'test'
+YAML;
+        mkdir($this->getConfigDirectory().'/test');
+        mkdir($this->getConfigDirectory().'/test/test1-1');
+        file_put_contents($this->getFilePath('test/test1-1/config.yml'), $content);
+
+        $content = <<<'YAML'
+---
+name: test2
+before: 'test1-1/*#test'
+---
+test: 'should not overwrite'
+YAML;
+        mkdir($this->getConfigDirectory().'/test2');
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('test', $collection->get('test'));
+
+        $content = <<<'YAML'
+---
+name: test3
+after: 'test1-1/*#test'
+---
+test: 'overwrite'
+YAML;
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('overwrite', $collection->get('test'));
+
+    }
+
     /**
      * Tests that an exception is correctly thrown when a circular dependency is present.
      * This means when two YAML documents are stated as both becoming before (or after)
