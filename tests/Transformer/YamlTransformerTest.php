@@ -273,7 +273,7 @@ YAML;
         $content = <<<'YAML'
 ---
 name: test2
-before: 'test/*#test'
+before: 'test/*'
 ---
 test: 'should not overwrite'
 YAML;
@@ -293,7 +293,7 @@ YAML;
         $content = <<<'YAML'
 ---
 name: test3
-after: 'test/*#test'
+after: 'test/*'
 ---
 test: 'overwrite'
 YAML;
@@ -307,6 +307,42 @@ YAML;
         $collection->transform([$transformer]);
 
         $this->assertEquals('overwrite', $collection->get('test'));
+
+        $content = <<<'YAML'
+---
+name: test4
+before: 'test/config'
+---
+test: 'anything else'
+YAML;
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('test', $collection->get('test'));
+
+        $content = <<<'YAML'
+---
+name: test5
+before: 'test/confi'
+---
+test: 'another thing'
+YAML;
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('another thing', $collection->get('test'));
     }
 
     public function testBeforeAfterStatementWithNestedPath()
@@ -324,7 +360,7 @@ YAML;
         $content = <<<'YAML'
 ---
 name: test2
-before: 'test1-1/*#test'
+before: 'test1-1/*'
 ---
 test: 'should not overwrite'
 YAML;
@@ -343,7 +379,7 @@ YAML;
         $content = <<<'YAML'
 ---
 name: test3
-after: 'test1-1/*#test'
+after: 'test1-1/*'
 ---
 test: 'overwrite'
 YAML;
@@ -358,6 +394,41 @@ YAML;
 
         $this->assertEquals('overwrite', $collection->get('test'));
 
+        $content = <<<'YAML'
+---
+name: test4
+before: '/test1*'
+---
+test: 'this will not overwrite'
+YAML;
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('test', $collection->get('test'));
+
+        $content = <<<'YAML'
+---
+name: test5
+before: '/test1/'
+---
+test: 'this will overwrite'
+YAML;
+        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+
+        $collection = new MemoryConfigCollection;
+        $transformer = new YamlTransformer(
+            $this->getConfigDirectory(),
+            $this->getFinder()
+        );
+        $collection->transform([$transformer]);
+
+        $this->assertEquals('this will overwrite', $collection->get('test'));
     }
 
     /**
