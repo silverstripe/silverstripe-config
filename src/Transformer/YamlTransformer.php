@@ -442,14 +442,15 @@ class YamlTransformer implements TransformerInterface
                 function ($part) {
                     return preg_quote($part, '%');
                 },
-                explode('*', $pattern)
+                explode('*', trim($pattern, '/\\'))
             )
-        ).'%';
+        ).'([./\\\\]|$)%';
 
         $matchedDocuments = [];
         foreach ($documents as $document) {
             // Ensure filename is relative
             $filename = $this->makeRelative($document['filename']);
+
             if (preg_match($patternRegExp, $filename)) {
                 if (!empty($documentName) && $documentName !== $document['header']['name']) {
                     // If we're looking for a specific document. If not found we can continue
