@@ -28,6 +28,10 @@ class YamlTransformerTest extends TestCase
 
     protected function setUp()
     {
+        if (!class_exists(vfsStream::class)) {
+            $this->markTestSkipped('This test class requires vfsStream');
+        }
+
         $this->root = vfsStream::setup();
     }
 
