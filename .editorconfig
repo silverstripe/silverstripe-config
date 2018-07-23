@@ -20,3 +20,6 @@ trim_trailing_whitespace = false
 [*.{yml,yaml,js,json,css,scss,eslintrc}]
 indent_size = 2
 indent_style = space
+
+[composer.json]
+indent_size = 4

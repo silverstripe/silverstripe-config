@@ -5,7 +5,7 @@ namespace SilverStripe\Config\Collections;
 use SilverStripe\Config\Middleware\Middleware;
 
 /**
- * This represents a colletction of config keys and values.
+ * This represents a collection of config keys and values.
  */
 interface ConfigCollectionInterface
 {
