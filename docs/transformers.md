@@ -76,3 +76,35 @@
                                           ->getClassConfig()        the private statics of a class
                                                                     and returns them as an array
 ```
+
+
+## Annotation Transformer
+
+```
++--------------------------------+    +--------------------------------+
+|                                |    |                                |
+|       Array of Classes         |    |            Array of            |
+| (eg. SilverStripe ClassLoader) |    | AnnotationDefinitionInterfaces |
+|                                |    |                                |
++---------------+----------------+    +---------------+----------------+
+                |                                     |
+                |-------------------------------------+
+                |
+                v                                                +----------------------+
+ +--------------+-----------+                                    |                      |
+ |                          |                                    |   PHP config keyed   |
+ |  Annotation transformer  +----------> transform() +---------->+     by priority.     |
+ |                          |                ^                   |                      |
+ +--------------------------+                |                   +----------------------+
+                                             |
+                                             |
+                                             |
+                                             |
+                                             |
+                                             +
+                                                                Uses reflection to lookup
+                                      ->getClassConfig()        the annotations in docblocks
+                                                                and returns them as an array
+```
+
+See `AnnotationDefinitionInterface` for more detail.

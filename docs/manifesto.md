@@ -2,7 +2,7 @@
 
 ## Simplicity over Complexity
 
-We will strive to simplyfy the code and document its features and concepts at every level 
+We will strive to simplify the code and document its features and concepts at every level 
 making it easier for others to understand and contribute.
 
 ## Performance over Features

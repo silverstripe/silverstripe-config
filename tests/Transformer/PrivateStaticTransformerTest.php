@@ -42,7 +42,7 @@ class PrivateStaticTransformerTest extends TestCase
     }
 
     /**
-     * Ensure that two classes merge to diplsay the correct config.
+     * Ensure that two classes merge to display the correct config.
      */
     public function testMerge()
     {
