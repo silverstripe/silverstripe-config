@@ -34,6 +34,7 @@ class AnnotationTransformer implements TransformerInterface
     /**
      * AnnotationTransformer constructor.
      * @param callable $classResolver
+     * @param array $annotationDefinitions
      */
     public function __construct(callable $classResolver, array $annotationDefinitions)
     {
@@ -176,13 +177,13 @@ class AnnotationTransformer implements TransformerInterface
         foreach ($parts as $part) {
             if (!strpos($part, '=')) {
                 // Trim in the case of `=arg` (0th index `=`)
-                $arguments[] = trim($part, '=');
+                $arguments[] = trim(trim($part, '='));
                 continue;
             }
 
             list ($key, $value) = explode('=', $part, 2);
 
-            $arguments[$key] = $value;
+            $arguments[trim($key)] = trim($value);
         }
 
         return $arguments;
