@@ -13,11 +13,6 @@
         "mikey179/vfsStream": "^1.6",
         "phpspec/prophecy": "^1.0"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.x-dev"
-        }
-    },
     "autoload": {
         "psr-4": {
             "SilverStripe\\Config\\": "src/",
