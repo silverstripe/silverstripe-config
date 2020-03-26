@@ -18,5 +18,10 @@
             "SilverStripe\\Config\\": "src/",
             "SilverStripe\\Config\\Tests\\": "tests/"
         }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.x-dev"
+        }
     }
 }
