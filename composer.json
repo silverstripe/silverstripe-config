@@ -11,8 +11,7 @@
     },
     "require-dev": {
         "sminnee/phpunit": "^5.7.29",
-        "mikey179/vfsstream": "^1.6",
-        "phpspec/prophecy": "^1.11"
+        "mikey179/vfsstream": "^1.6"
     },
     "autoload": {
         "psr-4": {
