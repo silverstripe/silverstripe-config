@@ -13,6 +13,7 @@ matrix:
        - COMPOSER_ARG=--ignore-platform-reqs
 
 before_script:
+  - phpenv config-rm xdebug.ini
   - composer validate
   - composer update $COMPOSER_ARG --prefer-dist
 
