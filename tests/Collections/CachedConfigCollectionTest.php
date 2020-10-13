@@ -3,59 +3,50 @@
 namespace SilverStripe\Config\Tests\Collections;
 
 use BadMethodCallException;
-use Prophecy\Prophecy\ObjectProphecy;
+use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Config\Collections\CachedConfigCollection;
-use PHPUnit\Framework\TestCase;
-use Prophecy\Prophet;
 use SilverStripe\Config\Collections\ConfigCollectionInterface;
 
 class CachedConfigCollectionTest extends TestCase
 {
     /**
-     * @var Prophet
-     */
-    protected $prophet;
-
-    protected function setUp()
-    {
-        $this->prophet = new Prophet;
-    }
-
-    protected function tearDown()
-    {
-        $this->prophet->checkPredictions();
-    }
-
-    /**
      * Test loading from cache
      */
     public function testCacheHit()
     {
-        /** @var CacheInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheInterface::class);
+        $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
 
-        /** @var ConfigCollectionInterface|ObjectProphecy $mockCollection */
-        $mockCollection = $this->prophet->prophesize(ConfigCollectionInterface::class);
-        $mockCollection->get('test', 'name', 0)->willReturn('value');
-        $mockCollection->exists('test', 'name', 0)->willReturn(true);
+        $mockCollection = $this->getMockBuilder(ConfigCollectionInterface::class)->getMock();
+        $mockCollection
+            ->expects($this->once())
+            ->method('get')
+            ->with('test', 'name', 0)
+            ->willReturn('value');
+        $mockCollection
+            ->expects($this->once())
+            ->method('exists')
+            ->with('test', 'name', 0)
+            ->willReturn(true);
 
         // Get will return hit
         $mockCache
-            ->get(CachedConfigCollection::CACHE_KEY)
-            ->willReturn($mockCollection->reveal())
-            ->shouldBeCalled();
+            ->expects($this->once())
+            ->method('get')
+            ->with(CachedConfigCollection::CACHE_KEY)
+            ->willReturn($mockCollection);
 
         // Set called in __destruct
         $mockCache
-            ->set(CachedConfigCollection::CACHE_KEY, $mockCollection->reveal())
-            ->shouldBeCalledTimes(1);
+            ->expects($this->once())
+            ->method('set')
+            ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
 
         $collection = new CachedConfigCollection();
         $collection->setCollectionCreator(function () {
             $this->fail("Invalid cache miss");
         });
-        $collection->setCache($mockCache->reveal());
+        $collection->setCache($mockCache);
 
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
@@ -67,30 +58,39 @@ class CachedConfigCollectionTest extends TestCase
 
     public function testCacheMiss()
     {
-        /** @var CacheInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheInterface::class);
+        $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
 
-        // Miss
         $mockCache
-            ->get(CachedConfigCollection::CACHE_KEY)
-            ->willReturn(null)
-            ->shouldBeCalled();
+            ->expects($this->once())
+            ->method('get')
+            ->with(CachedConfigCollection::CACHE_KEY)
+            ->willReturn(null);
 
-        /** @var ConfigCollectionInterface|ObjectProphecy $mockCollection */
-        $mockCollection = $this->prophet->prophesize(ConfigCollectionInterface::class);
-        $mockCollection->get('test', 'name', 0)->willReturn('value');
-        $mockCollection->exists('test', 'name', 0)->willReturn(true);
+        $mockCollection = $this->getMockBuilder(ConfigCollectionInterface::class)->getMock();
+
+        $mockCollection
+            ->expects($this->atLeastOnce())
+            ->method('get')
+            ->with('test', 'name', 0)
+            ->willReturn('value');
+
+        $mockCollection
+            ->expects($this->atLeastOnce())
+            ->method('exists')
+            ->with('test', 'name', 0)
+            ->willReturn(true);
 
         // Cache will be generated, saved, and then saved again on __destruct()
         $mockCache
-            ->set(CachedConfigCollection::CACHE_KEY, $mockCollection->reveal())
-            ->shouldBeCalledTimes(2);
+            ->expects($this->exactly(2))
+            ->method('set')
+            ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
 
         $collection = new CachedConfigCollection();
         $collection->setCollectionCreator(function () use ($mockCollection) {
-            return $mockCollection->reveal();
+            return $mockCollection;
         });
-        $collection->setCache($mockCache->reveal());
+        $collection->setCache($mockCache);
 
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
@@ -106,16 +106,16 @@ class CachedConfigCollectionTest extends TestCase
         $this->expectExceptionMessage("Infinite loop detected. Config could not be bootstrapped.");
 
         // Mock cache
-        /** @var CacheInterface|ObjectProphecy $mockCache */
-        $mockCache = $this->prophet->prophesize(CacheInterface::class);
+        $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
         $mockCache
-            ->get(CachedConfigCollection::CACHE_KEY)
-            ->willReturn(null)
-            ->shouldBeCalled();
+            ->expects($this->any())
+            ->method('get')
+            ->with(CachedConfigCollection::CACHE_KEY)
+            ->willReturn(null);
 
         // Build new config
         $collection = new CachedConfigCollection();
-        $collection->setCache($mockCache->reveal());
+        $collection->setCache($mockCache);
         $collection->setCollectionCreator(function () use ($collection) {
             $collection->getCollection();
         });
