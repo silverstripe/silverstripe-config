@@ -6,3 +6,9 @@ import:
 env:
   global:
     - REQUIRE_RECIPE="4.x-dev"
+    # Test that adding SHIPPABLE will get codecov to detect that the CI environment is travis
+    # https://github.com/codecov/uploader/blob/master/src/ci_providers/provider_travisci.js#L2
+    # SHIPPABLE is not in the travis list of envs variables https://docs.travis-ci.com/user/environment-variables/
+    # I suspect that the codecov team are going to remove SHIPPABLE as a conditional once they're
+    # ready to properly release this
+    - SHIPPABLE=1
