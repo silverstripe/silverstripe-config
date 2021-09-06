@@ -59,25 +59,14 @@ class Priority
     public static function mergeArray(array $highPriority, array $lowPriority)
     {
         foreach ($highPriority as $key => $value) {
-            // If value isn't an array, we can overwrite whatever was before it
-            if (!is_array($value)) {
-                if (is_int($key)) {
-                    $lowPriority[] = $value;
-                } else {
-                    $lowPriority[$key] = $value;
-                }
-
+            if (is_int($key)) {
+                $lowPriority[] = $value;
                 continue;
             }
 
-            // If not set, or we're changing type we can set low priority
-            if (is_int($key) || !array_key_exists($key, $lowPriority) || !is_array($lowPriority[$key])) {
-                if (is_int($key)) {
-                    $lowPriority[] = $value;
-                } else {
-                    $lowPriority[$key] = $value;
-                }
-
+            // If not already set, or we're changing type we can set low priority
+            if (!isset($lowPriority[$key]) || !is_array($value) || !is_array($lowPriority[$key])) {
+                $lowPriority[$key] = $value;
                 continue;
             }
 
