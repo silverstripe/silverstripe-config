@@ -97,7 +97,7 @@ class PrivateStaticTransformerTest extends TestCase
 
     public function testInvalidConfigError()
     {
-        $this->expectException(LogicException::class);
+        $this->expectException(\LogicException::class);
         $this->expectExceptionMessage(
             ClassL::class . '::option is not private but overrides a private static '
             . 'config in parent class ' . ClassK::class
