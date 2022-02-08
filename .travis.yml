@@ -1,8 +1,4 @@
 version: ~> 1.0
 
 import:
-  - silverstripe/silverstripe-travis-shared:config/provision/self-jobs-range.yml
-
-env:
-  global:
-    - REQUIRE_RECIPE="4.x-dev"
+  - silverstripe/silverstripe-travis-shared:config/provision/standard-jobs-fixed.yml
