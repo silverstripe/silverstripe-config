@@ -7,7 +7,7 @@
         "symfony/yaml": "^2.8 || ^3.2 || ^4",
         "marcj/topsort": "^1 || ^2",
         "psr/simple-cache": "^1.0",
-        "php": "^7.3 || ^8.0"
+        "php": "^7.4 || ^8.0"
     },
     "require-dev": {
         "silverstripe/framework": "^4.10",
