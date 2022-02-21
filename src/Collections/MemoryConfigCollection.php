@@ -252,22 +252,45 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         });
     }
 
-    public function serialize()
+    public function __serialize(): array
     {
-        // Auto-serialize
         $data = [];
         foreach ($this->getSerializedMembers() as $key) {
             $data[$key] = $this->$key;
         }
-        return serialize($data);
+        return $data;
     }
 
-    public function unserialize($serialized)
+    public function __unserialize(array $data): void
     {
-        $data = unserialize($serialized);
         foreach ($this->getSerializedMembers() as $key) {
             $this->$key = isset($data[$key]) ? $data[$key] : null;
         }
+    }
+
+    /**
+     * The __serialize() magic method will be automatically used instead of this
+     * 
+     * @return string
+     * @deprecated will be removed in 5.0
+     */
+    public function serialize()
+    {
+        return serialize($this->__serialize());
+    }
+
+    /**
+     * The __unserialize() magic method will be automatically used instead of this almost all the time
+     * This method will be automatically used if existing serialized data was not saved as an associative array
+     * and the PHP version used in less than PHP 9.0
+     *
+     * @param string $serialized
+     * @deprecated will be removed in 5.0
+     */
+    public function unserialize($serialized)
+    {
+        $data = unserialize($serialized);
+        $this->__unserialize($data);
     }
 
     public function nest()

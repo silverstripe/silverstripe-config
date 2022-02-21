@@ -53,13 +53,45 @@ trait MiddlewareCommon
         return ($excludeMiddleware & $this->disableFlag) !== $this->disableFlag;
     }
 
-    public function serialize()
+    public function __serialize(): array
     {
-        return json_encode([$this->disableFlag]);
+        return [
+            'disableFlag' => $this->disableFlag
+        ];
     }
 
+    public function __unserialize(array $data): void
+    {
+        $this->disableFlag = $data['disableFlag'];
+    }
+
+    /**
+     * The __serialize() magic method will be automatically used instead of this
+     *
+     * @return string
+     * @deprecated will be removed in 2.0
+     */
+    public function serialize()
+    {
+        return json_encode(array_values($this->__serialize()));
+    }
+
+    /**
+     * The __unserialize() magic method will be automatically used instead of this almost all the time
+     * This method will be automatically used if existing serialized data was not saved as an associative array
+     * and the PHP version used in less than PHP 9.0
+     *
+     * @param string $serialized
+     * @deprecated will be removed in 2.0
+     */
     public function unserialize($serialized)
     {
-        list($this->disableFlag) = json_decode($serialized, true);
+        $values = json_decode($serialized, true);
+        foreach (array_keys($this->__serialize()) as $i => $key) {
+            if (!property_exists($this, $key)) {
+                continue;
+            }
+            $this->{$key} = $values[$i] ?? 0;
+        }
     }
 }
