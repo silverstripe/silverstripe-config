@@ -51,7 +51,7 @@ trait MiddlewareAware
         $next = $last;
 
         /** @var Middleware $middleware */
-        foreach (array_reverse($this->getMiddlewares()) as $middleware) {
+        foreach (array_reverse($this->getMiddlewares() ?? []) as $middleware) {
             $next = function ($class, $excludeMiddleware) use ($middleware, $next) {
                 return $middleware->getClassConfig($class, $excludeMiddleware, $next);
             };

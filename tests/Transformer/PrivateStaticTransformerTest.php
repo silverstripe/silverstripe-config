@@ -84,7 +84,7 @@ class PrivateStaticTransformerTest extends TestCase
     public function testInvalidClass()
     {
         $class = 'SomeNonExistentClass';
-        if (class_exists($class)) {
+        if (class_exists($class ?? '')) {
             $this->markTestSkipped($class . ' exists but the test expects it not to.');
         }
 

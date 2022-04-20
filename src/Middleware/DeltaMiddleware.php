@@ -100,7 +100,7 @@ class DeltaMiddleware implements Middleware
             case DeltaConfigCollection::REPLACE:
                 return $delta['config'];
             case DeltaConfigCollection::REMOVE:
-                return array_diff_key($config, $delta['config']);
+                return array_diff_key($config ?? [], $delta['config']);
             default:
                 throw new InvalidArgumentException("Invalid delta " . $delta['type']);
         }

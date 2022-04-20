@@ -65,8 +65,8 @@ class YamlTransformerTest extends TestCase
         $dir = $this->root->url().'/'.$this->directory;
 
         // Create the directory if it doesn't exist.
-        if (!is_dir($dir)) {
-            mkdir($dir);
+        if (!is_dir($dir ?? '')) {
+            mkdir($dir ?? '');
         }
 
         return $dir;
@@ -77,7 +77,7 @@ class YamlTransformerTest extends TestCase
      */
     public function testEmptyFileIgnored()
     {
-        file_put_contents($this->getFilePath('empty.yml'), '');
+        file_put_contents($this->getFilePath('empty.yml') ?? '', '');
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -107,7 +107,7 @@ name: third
 third: thirdValue
 YAML;
 
-        file_put_contents($this->getFilePath('config2.yml'), $content);
+        file_put_contents($this->getFilePath('config2.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -137,7 +137,7 @@ MyConfig:
 YAML;
 
         $file = $this->getFilePath('config.yml');
-        file_put_contents($file, $content);
+        file_put_contents($file ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -172,7 +172,7 @@ noname: 'error'
 ---
 Test: blah
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -196,7 +196,7 @@ name: 'first'
 ---
 test: 'blah'
 YAML;
-        file_put_contents($this->getFilePath('first.yml'), $content);
+        file_put_contents($this->getFilePath('first.yml') ?? '', $content);
 
         $content = <<<'YAML'
 ---
@@ -205,7 +205,7 @@ after: 'first'
 ---
 test: 'overwritten'
 YAML;
-        file_put_contents($this->getFilePath('second.yml'), $content);
+        file_put_contents($this->getFilePath('second.yml') ?? '', $content);
 
         $content = <<<'YAML'
 ---
@@ -214,7 +214,7 @@ before: 'first'
 ---
 test: 'set first'
 YAML;
-        file_put_contents($this->getFilePath('zzz.yml'), $content);
+        file_put_contents($this->getFilePath('zzz.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -244,7 +244,7 @@ before: '#first'
 ---
 test: 'overwritten'
 YAML;
-        file_put_contents($this->getFilePath('first.yml'), $content);
+        file_put_contents($this->getFilePath('first.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -268,7 +268,7 @@ name: test
 test: 'test'
 YAML;
         mkdir($this->getConfigDirectory().'/test');
-        file_put_contents($this->getFilePath('test/config.yml'), $content);
+        file_put_contents($this->getFilePath('test/config.yml') ?? '', $content);
 
         $content = <<<'YAML'
 ---
@@ -278,7 +278,7 @@ before: 'test/*'
 test: 'should not overwrite'
 YAML;
         mkdir($this->getConfigDirectory().'/test2');
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -297,7 +297,7 @@ after: 'test/*'
 ---
 test: 'overwrite'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -315,7 +315,7 @@ before: 'test/config'
 ---
 test: 'anything else'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -333,7 +333,7 @@ before: 'test/confi'
 ---
 test: 'another thing'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -355,7 +355,7 @@ test: 'test'
 YAML;
         mkdir($this->getConfigDirectory().'/test');
         mkdir($this->getConfigDirectory().'/test/test1-1');
-        file_put_contents($this->getFilePath('test/test1-1/config.yml'), $content);
+        file_put_contents($this->getFilePath('test/test1-1/config.yml') ?? '', $content);
 
         $content = <<<'YAML'
 ---
@@ -365,7 +365,7 @@ before: 'test1-1/*'
 test: 'should not overwrite'
 YAML;
         mkdir($this->getConfigDirectory().'/test2');
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -383,7 +383,7 @@ after: 'test1-1/*'
 ---
 test: 'overwrite'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -401,7 +401,7 @@ before: '/test1*'
 ---
 test: 'this will not overwrite'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -419,7 +419,7 @@ before: '/test1/'
 ---
 test: 'this will overwrite'
 YAML;
-        file_put_contents($this->getFilePath('test2/config.yml'), $content);
+        file_put_contents($this->getFilePath('test2/config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -451,7 +451,7 @@ before: first
 ---
 test: test
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $transformer = new YamlTransformer(
@@ -490,7 +490,7 @@ Except:
 ---
 test: 'not applied'
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
@@ -537,7 +537,7 @@ Except:
 ---
 test: 'not applied'
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
@@ -647,7 +647,7 @@ Only:
 test2: 'test2-only-error'
 
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
@@ -687,7 +687,7 @@ Except:
 ---
 test2: 'test2'
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(
@@ -740,7 +740,7 @@ Only:
 ---
 arrays: passed
 YAML;
-        file_put_contents($this->getFilePath('config.yml'), $content);
+        file_put_contents($this->getFilePath('config.yml') ?? '', $content);
 
         $collection = new MemoryConfigCollection;
         $yaml = new YamlTransformer(

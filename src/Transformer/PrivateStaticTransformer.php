@@ -40,7 +40,7 @@ class PrivateStaticTransformer implements TransformerInterface
 
         foreach ($classes as $class) {
             // Skip if the class doesn't exist
-            if (!class_exists($class)) {
+            if (!class_exists($class ?? '')) {
                 continue;
             }
 
@@ -123,11 +123,11 @@ class PrivateStaticTransformer implements TransformerInterface
         }
         $annotations = $prop->getDocComment();
         // Whitelist @config
-        if (strstr($annotations, '@config')) {
+        if (strstr($annotations ?? '', '@config')) {
             return true;
         }
         // Don't treat @internal as config
-        if (strstr($annotations, '@internal')) {
+        if (strstr($annotations ?? '', '@internal')) {
             return false;
         }
         return true;

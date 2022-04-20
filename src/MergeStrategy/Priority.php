@@ -71,7 +71,7 @@ class Priority
             }
 
             // If not set, or we're changing type we can set low priority
-            if (is_int($key) || !array_key_exists($key, $lowPriority) || !is_array($lowPriority[$key])) {
+            if (is_int($key) || !array_key_exists($key, $lowPriority ?? []) || !is_array($lowPriority[$key])) {
                 if (is_int($key)) {
                     $lowPriority[] = $value;
                 } else {

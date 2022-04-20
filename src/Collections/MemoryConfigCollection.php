@@ -79,7 +79,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     {
         $this->saveMetadata($class, $metadata);
 
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if ($name) {
             if (!isset($this->config[$classKey])) {
                 $this->config[$classKey] = [];
@@ -122,7 +122,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     protected function getClassConfig($class, $excludeMiddleware = 0)
     {
         // `true` excludes all middleware, so bypass call cache
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if ($excludeMiddleware === true) {
             return isset($this->config[$classKey]) ? $this->config[$classKey] : [];
         }
@@ -156,14 +156,14 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             return false;
         }
         if ($name) {
-            return array_key_exists($name, $config);
+            return array_key_exists($name, $config ?? []);
         }
         return true;
     }
 
     public function remove($class, $name = null)
     {
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if ($name) {
             unset($this->config[$classKey][$name]);
         } else {
@@ -248,7 +248,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     {
         return array_filter(array_keys(get_object_vars($this)), function ($key) {
             // Skip $_underscoreProp
-            return strpos($key, '_') !== 0;
+            return strpos($key ?? '', '_') !== 0;
         });
     }
 
@@ -289,7 +289,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      */
     public function unserialize($serialized)
     {
-        $data = unserialize($serialized);
+        $data = unserialize($serialized ?? '');
         $this->__unserialize($data);
     }
 
@@ -310,7 +310,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
             return;
         }
 
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if (isset($this->metadata[$classKey]) && isset($this->config[$classKey])) {
             if (!isset($this->history[$classKey])) {
                 $this->history[$classKey] = [];
