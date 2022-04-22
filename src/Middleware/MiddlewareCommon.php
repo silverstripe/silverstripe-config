@@ -73,7 +73,7 @@ trait MiddlewareCommon
      */
     public function serialize()
     {
-        return json_encode(array_values($this->__serialize()));
+        return json_encode(array_values($this->__serialize() ?? []));
     }
 
     /**
@@ -86,9 +86,9 @@ trait MiddlewareCommon
      */
     public function unserialize($serialized)
     {
-        $values = json_decode($serialized, true);
-        foreach (array_keys($this->__serialize()) as $i => $key) {
-            if (!property_exists($this, $key)) {
+        $values = json_decode($serialized ?? '', true);
+        foreach (array_keys($this->__serialize() ?? []) as $i => $key) {
+            if (!property_exists($this, $key ?? '')) {
                 continue;
             }
             $this->{$key} = $values[$i] ?? 0;

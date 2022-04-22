@@ -140,7 +140,7 @@ class YamlTransformer implements TransformerInterface
      */
     public function addRule($rule, Closure $func)
     {
-        $rule = strtolower($rule);
+        $rule = strtolower($rule ?? '');
         $this->rules[$rule] = $func;
         return $this;
     }
@@ -154,7 +154,7 @@ class YamlTransformer implements TransformerInterface
      */
     protected function hasRule($rule)
     {
-        $rule = strtolower($rule);
+        $rule = strtolower($rule ?? '');
         return isset($this->rules[$rule]);
     }
 
@@ -168,7 +168,7 @@ class YamlTransformer implements TransformerInterface
      */
     public function ignoreRule($rule)
     {
-        $rule = strtolower($rule);
+        $rule = strtolower($rule ?? '');
         $this->ignoreRules[$rule] = $rule;
     }
 
@@ -181,7 +181,7 @@ class YamlTransformer implements TransformerInterface
      */
     protected function isRuleIgnored($rule)
     {
-        $rule = strtolower($rule);
+        $rule = strtolower($rule ?? '');
 
         return isset($this->ignoreRules[$rule]);
     }
@@ -199,7 +199,7 @@ class YamlTransformer implements TransformerInterface
         $documents = [];
         foreach ($unnamed as $uniqueKey => $document) {
             $header = YamlParser::parse($document['header']) ?: [];
-            $header = array_change_key_case($header, CASE_LOWER);
+            $header = array_change_key_case($header ?? [], CASE_LOWER);
 
             $content = YamlParser::parse($document['content']);
 
@@ -248,7 +248,7 @@ class YamlTransformer implements TransformerInterface
 
         // We need to loop through each file and parse the yaml content
         foreach ($this->files as $file) {
-            $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $lines = file($file ?? '', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
             $firstLine = true;
             $context = 'content';
@@ -398,8 +398,8 @@ class YamlTransformer implements TransformerInterface
 
         // If the pattern starts with a hash, it means we're looking for a single document
         // named without the hash.
-        if (strpos($pattern, '#') === 0) {
-            $name = substr($pattern, 1);
+        if (strpos($pattern ?? '', '#') === 0) {
+            $name = substr($pattern ?? '', 1);
             if (isset($documents[$name])) {
                 return [$documents[$name]];
             }
@@ -410,14 +410,14 @@ class YamlTransformer implements TransformerInterface
         // and likewise for Before="*"
         if ($pattern === '*') {
             return array_filter(
-                $documents,
+                $documents ?? [],
                 function ($document) use ($flag) {
                     if (empty($document['header'][$flag])) {
                         return true;
                     }
                     $otherPatterns = $document['header'][$flag];
                     if (is_array($otherPatterns)) {
-                        return !in_array('*', $otherPatterns);
+                        return !in_array('*', $otherPatterns ?? []);
                     }
                     return $otherPatterns !== '*';
                 }
@@ -428,11 +428,11 @@ class YamlTransformer implements TransformerInterface
         // and check their filename and maybe their document name, depending on the pattern.
         // We don't want to do any pattern matching after the first hash as the document name
         // is assumed to follow it.
-        $firstHash = strpos($pattern, '#');
+        $firstHash = strpos($pattern ?? '', '#');
         $documentName = false;
         if ($firstHash !== false) {
-            $documentName = substr($pattern, $firstHash + 1);
-            $pattern = substr($pattern, 0, $firstHash);
+            $documentName = substr($pattern ?? '', $firstHash + 1);
+            $pattern = substr($pattern ?? '', 0, $firstHash);
         }
 
         // Replace all `*` with `[^\.][a-zA-Z0-9\-_\/\.]+`, and quote other characters
@@ -440,9 +440,9 @@ class YamlTransformer implements TransformerInterface
             '[^\.][a-zA-Z0-9\-_\/\.]+',
             array_map(
                 function ($part) {
-                    return preg_quote($part, '%');
+                    return preg_quote($part ?? '', '%');
                 },
-                explode('*', trim($pattern, '/\\'))
+                explode('*', trim($pattern ?? '', '/\\'))
             )
         ).'([./\\\\]|$)%';
 
@@ -451,7 +451,7 @@ class YamlTransformer implements TransformerInterface
             // Ensure filename is relative
             $filename = $this->makeRelative($document['filename']);
 
-            if (preg_match($patternRegExp, $filename)) {
+            if (preg_match($patternRegExp ?? '', $filename ?? '')) {
                 if (!empty($documentName) && $documentName !== $document['header']['name']) {
                     // If we're looking for a specific document. If not found we can continue
                     continue;
@@ -475,12 +475,12 @@ class YamlTransformer implements TransformerInterface
      */
     protected function makeRelative($filename)
     {
-        $dir = substr($filename, 0, strlen($this->baseDirectory));
+        $dir = substr($filename ?? '', 0, strlen($this->baseDirectory ?? ''));
         if ($dir == $this->baseDirectory) {
-            return trim(substr($filename, strlen($this->baseDirectory)), DIRECTORY_SEPARATOR);
+            return trim(substr($filename ?? '', strlen($this->baseDirectory ?? '')), DIRECTORY_SEPARATOR);
         }
 
-        return trim($filename, DIRECTORY_SEPARATOR);
+        return trim($filename ?? '', DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -577,7 +577,7 @@ class YamlTransformer implements TransformerInterface
      */
     protected function testSingleRule($rule, $params, $flag = self::ONLY_FLAG)
     {
-        $rule = strtolower($rule);
+        $rule = strtolower($rule ?? '');
         if (!$this->hasRule($rule)) {
             throw new Exception(sprintf('Rule \'%s\' doesn\'t exist.', $rule));
         }

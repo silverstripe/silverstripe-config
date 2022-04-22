@@ -117,7 +117,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
      */
     public function getDeltas($class)
     {
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         return isset($this->deltas[$classKey])
             ? $this->deltas[$classKey]
             : [];
@@ -239,7 +239,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
         }
 
         // Clear just one class
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if (!$key) {
             unset($this->deltas[$classKey]);
             return;
@@ -250,13 +250,13 @@ class DeltaConfigCollection extends MemoryConfigCollection
             return;
         }
         $this->deltas[$classKey] = array_filter(
-            $this->deltas[$classKey],
+            $this->deltas[$classKey] ?? [],
             function ($delta) use ($key) {
                 // Clear if an array with exactly one element, with the key
                 // being the affected config property
                 return !isset($delta['config'])
                     || !is_array($delta['config'])
-                    || (count($delta['config']) !== 1)
+                    || (count($delta['config'] ?? []) !== 1)
                     || !isset($delta['config'][$key]);
             }
         );
@@ -270,7 +270,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
      */
     protected function addDelta($class, $delta)
     {
-        $classKey = strtolower($class);
+        $classKey = strtolower($class ?? '');
         if (!isset($this->deltas[$classKey])) {
             $this->deltas[$classKey] = [];
         }
