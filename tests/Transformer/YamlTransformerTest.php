@@ -74,6 +74,7 @@ class YamlTransformerTest extends TestCase
 
     /**
      * Test that we can have an empty file without throwing any errors.
+     * @doesNotPerformAssertions
      */
     public function testEmptyFileIgnored()
     {
