@@ -36,12 +36,6 @@ class CachedConfigCollectionTest extends TestCase
             ->with(CachedConfigCollection::CACHE_KEY)
             ->willReturn($mockCollection);
 
-        // Set called in __destruct
-        $mockCache
-            ->expects($this->once())
-            ->method('set')
-            ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
-
         $collection = new CachedConfigCollection();
         $collection->setCollectionCreator(function () {
             $this->fail("Invalid cache miss");
@@ -51,9 +45,6 @@ class CachedConfigCollectionTest extends TestCase
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
         $this->assertEquals('value', $collection->get('test', 'name'));
-
-        // Write back changes to cache
-        $collection->__destruct();
     }
 
     public function testCacheMiss()
@@ -80,9 +71,9 @@ class CachedConfigCollectionTest extends TestCase
             ->with('test', 'name', 0)
             ->willReturn(true);
 
-        // Cache will be generated, saved, and then saved again on __destruct()
+        // Cache will be generated, then saved
         $mockCache
-            ->expects($this->exactly(2))
+            ->expects($this->once())
             ->method('set')
             ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
 
@@ -95,9 +86,6 @@ class CachedConfigCollectionTest extends TestCase
         // Check
         $this->assertTrue($collection->exists('test', 'name'));
         $this->assertEquals('value', $collection->get('test', 'name'));
-
-        // Write back changes to cache
-        $collection->__destruct();
     }
 
     public function testInfiniteLoop()

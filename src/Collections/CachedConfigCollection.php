@@ -141,24 +141,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
             $this->building = false;
         }
 
-        // Save immediately.
-        // Note additional deferred save will occur in _destruct()
+        // Save collection in cache
         $this->cache->set(self::CACHE_KEY, $this->collection);
         return $this->collection;
-    }
-
-    /**
-     * Commits the cache
-     */
-    public function __destruct()
-    {
-        // Ensure back-end cache is updated
-        if ($this->collection) {
-            $this->cache->set(self::CACHE_KEY, $this->collection);
-
-            // Prevent double-destruct
-            $this->collection = null;
-        }
     }
 
     public function nest()
