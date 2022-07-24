@@ -12,7 +12,8 @@
     "require-dev": {
         "silverstripe/framework": "^4.10",
         "phpunit/phpunit": "^9.5",
-        "mikey179/vfsstream": "^1.6"
+        "mikey179/vfsstream": "^1.6",
+        "squizlabs/php_codesniffer": "^3.5"
     },
     "autoload": {
         "psr-4": {
