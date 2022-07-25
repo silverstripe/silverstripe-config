@@ -270,7 +270,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
     /**
      * The __serialize() magic method will be automatically used instead of this
-     * 
+     *
      * @return string
      * @deprecated will be removed in 5.0
      */
