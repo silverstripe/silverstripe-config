@@ -4,10 +4,10 @@
     "license": "BSD-3-Clause",
     "require": {
         "php": "^8.1",
-        "symfony/finder": "^4.0",
-        "symfony/yaml": "^4.0",
-        "marcj/topsort": "^2",
-        "psr/simple-cache": "^1.0"
+        "symfony/finder": "^4.4.44",
+        "symfony/yaml": "^4.4.44",
+        "marcj/topsort": "^2.0.0",
+        "psr/simple-cache": "^1.0.1"
     },
     "require-dev": {
         "silverstripe/framework": "^5",
