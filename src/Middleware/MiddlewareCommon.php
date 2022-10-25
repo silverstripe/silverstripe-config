@@ -2,6 +2,8 @@
 
 namespace SilverStripe\Config\Middleware;
 
+use SilverStripe\Dev\Deprecation;
+
 /**
  * Abstract flag-aware middleware
  */
@@ -69,10 +71,11 @@ trait MiddlewareCommon
      * The __serialize() magic method will be automatically used instead of this
      *
      * @return string
-     * @deprecated will be removed in 2.0
+     * @deprecated 1.12.0 Will be removed without equivalent functionality to replace it
      */
     public function serialize()
     {
+        Deprecation::notice('1.12.0', 'Will be removed without equivalent functionality to replace it');
         return json_encode(array_values($this->__serialize() ?? []));
     }
 
@@ -82,10 +85,11 @@ trait MiddlewareCommon
      * and the PHP version used in less than PHP 9.0
      *
      * @param string $serialized
-     * @deprecated will be removed in 2.0
+     * @deprecated 1.12.0 Will be removed without equivalent functionality to replace it
      */
     public function unserialize($serialized)
     {
+        Deprecation::notice('1.12.0', 'Will be removed without equivalent functionality to replace it');
         $values = json_decode($serialized ?? '', true);
         foreach (array_keys($this->__serialize() ?? []) as $i => $key) {
             if (!property_exists($this, $key ?? '')) {
