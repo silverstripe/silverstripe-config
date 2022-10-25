@@ -194,7 +194,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     }
 
     /**
-     * @deprecated 4.0.1 Use merge() instead
+     * @deprecated 1.0.0 Use merge() instead
      *
      * Synonym for merge()
      *
@@ -205,7 +205,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      */
     public function update($class, $name, $value)
     {
-        Deprecation::notice('4.0.1');
+        Deprecation::notice('1.0.0', 'Use merge() instead');
         $this->merge($class, $name, $value);
         return $this;
     }
@@ -274,11 +274,11 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * The __serialize() magic method will be automatically used instead of this
      *
      * @return string
-     * @deprecated 4.12.0 Use __serialize() instead
+     * @deprecated 1.12.0 Use __serialize() instead
      */
     public function serialize()
     {
-        Deprecation::notice('4.12.0', 'Will be removed in 5.0');
+        Deprecation::notice('1.12.0', 'Use __serialize() instead');
         return serialize($this->__serialize());
     }
 
@@ -288,11 +288,11 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * and the PHP version used in less than PHP 9.0
      *
      * @param string $serialized
-     * @deprecated 4.12.0 Use __unserialize() instead
+     * @deprecated 1.12.0 Use __unserialize() instead
      */
     public function unserialize($serialized)
     {
-        Deprecation::notice('4.12.0', 'Will be removed in 5.0');
+        Deprecation::notice('1.12.0', 'Use __unserialize() instead');
         $data = unserialize($serialized ?? '');
         $this->__unserialize($data);
     }
