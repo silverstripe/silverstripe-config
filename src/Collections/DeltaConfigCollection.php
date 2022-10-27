@@ -270,6 +270,11 @@ class DeltaConfigCollection extends MemoryConfigCollection
      */
     protected function addDelta($class, $delta)
     {
+        if (is_array($delta['config'] ?? null)) {
+            foreach (array_keys($delta['config']) as $configKey) {
+                $this->checkForDeprecatedConfig($class, $configKey);
+            }
+        }
         $classKey = strtolower($class ?? '');
         if (!isset($this->deltas[$classKey])) {
             $this->deltas[$classKey] = [];

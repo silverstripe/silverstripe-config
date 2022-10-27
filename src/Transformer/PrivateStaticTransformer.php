@@ -49,6 +49,11 @@ class PrivateStaticTransformer implements TransformerInterface
 
             // Add the item to the collection
             $collection->set($class, null, $item['value'], $item['metadata']);
+
+            // Save deprecated config to special __deprecated key
+            if (!empty($item['deprecated'])) {
+                $collection->merge('__deprecated', 'config', [strtolower($class) => $item['deprecated']]);
+            }
         }
 
         return $collection;
@@ -69,6 +74,7 @@ class PrivateStaticTransformer implements TransformerInterface
         $props = $reflection->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
+        $deprecated = [];
         foreach ($props as $prop) {
             // Check if this property is configurable
             if (!$this->isConfigProperty($prop)) {
@@ -82,6 +88,13 @@ class PrivateStaticTransformer implements TransformerInterface
             if ($this->isConfigValue($value)) {
                 $classConfig[$prop->getName()] = $value;
             }
+
+            // Detect deprecated config
+            $docComment = $prop->getDocComment();
+            if (str_contains($docComment, '@deprecated')) {
+                $propName = $prop->getName();
+                $deprecated[$propName] = $this->getDeprecatedData($docComment, $class, $propName);
+            }
         }
 
         // Create the metadata for our new item
@@ -91,7 +104,29 @@ class PrivateStaticTransformer implements TransformerInterface
             'transformer' => static::class
         ];
 
-        return ['value' => $classConfig, 'metadata' => $metadata];
+        return ['value' => $classConfig, 'metadata' => $metadata, 'deprecated' => $deprecated];
+    }
+
+    private function getDeprecatedData(string $docComment, string $class, string $propName): array
+    {
+        $message = "Config $class::$propName is deprecated.";
+        // $matches[2] will be an empty string in the case of `@deprecated 1.2.3`
+        if (preg_match("#@deprecated ([0-9\.:]+) *(.*)(\n|$)#", $docComment, $matches)) {
+            return [
+                'version' => $matches[1],
+                'message' => $this->prepareMessage($message, $matches[2]),
+            ];
+        }
+        preg_match("#@deprecated *(.*)(\n|$)#", $docComment, $matches);
+        return [
+            'version' => '1.0.0',
+            'message' => $this->prepareMessage($message, $matches[1]),
+        ];
+    }
+
+    private function prepareMessage(string $message, string $match): string
+    {
+        return trim($message . ' ' . rtrim(trim($match), '.') . '.');
     }
 
     /**

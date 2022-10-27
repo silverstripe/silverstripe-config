@@ -9,6 +9,7 @@ use Symfony\Component\Finder\Finder;
 use MJS\TopSort\Implementations\ArraySort;
 use Exception;
 use Closure;
+use SilverStripe\Config\Collections\MemoryConfigCollection;
 
 class YamlTransformer implements TransformerInterface
 {
@@ -104,6 +105,7 @@ class YamlTransformer implements TransformerInterface
 
         foreach ($documents as $document) {
             if (!empty($document['content'])) {
+                $this->checkForDeprecatedConfig($document, $collection);
                 // We prepare the meta data
                 $metadata = $document['header'];
                 $metadata['transformer'] = static::class;
@@ -126,6 +128,21 @@ class YamlTransformer implements TransformerInterface
         }
 
         return $collection;
+    }
+
+    private function checkForDeprecatedConfig(array $document, MutableConfigCollectionInterface $collection): void
+    {
+        if (!($collection instanceof MemoryConfigCollection)) {
+            return;
+        }
+        foreach ($document['content'] as $key => $value) {
+            if (!is_array($value)) {
+                continue;
+            }
+            foreach (array_keys($value) as $valueKey) {
+                $collection->checkForDeprecatedConfig($key, $valueKey);
+            }
+        }
     }
 
     /**
