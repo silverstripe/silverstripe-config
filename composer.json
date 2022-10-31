@@ -3,14 +3,14 @@
     "description": "SilverStripe configuration based on YAML and class statics",
     "license": "BSD-3-Clause",
     "require": {
+        "php": "^7.4 || ^8.0",
         "symfony/finder": "^3.4 || ^4.0",
         "symfony/yaml": "^3.4 || ^4.0",
         "marcj/topsort": "^1 || ^2",
         "psr/simple-cache": "^1.0",
-        "php": "^7.4 || ^8.0"
+        "silverstripe/framework": "^4.12"
     },
     "require-dev": {
-        "silverstripe/framework": "^4.10",
         "phpunit/phpunit": "^9.5",
         "mikey179/vfsstream": "^1.6",
         "squizlabs/php_codesniffer": "^3.5"

@@ -82,6 +82,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
         $classKey = strtolower($class ?? '');
         if ($name) {
+            $this->checkForDeprecatedConfig($classKey, $name);
             if (!isset($this->config[$classKey])) {
                 $this->config[$classKey] = [];
             }
@@ -106,9 +107,19 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
         // Return either name, or whole-class config
         if ($name) {
+            $this->checkForDeprecatedConfig($class, $name);
             return isset($config[$name]) ? $config[$name] : null;
         }
         return $config;
+    }
+
+    public function checkForDeprecatedConfig($class, $name): void
+    {
+        $deprecated = $this->getClassConfig('__deprecated', true);
+        $data = $deprecated['config'][strtolower($class)][$name] ?? [];
+        if (!empty($data)) {
+            Deprecation::notice($data['version'], $data['message'], Deprecation::SCOPE_CONFIG);
+        }
     }
 
     /**
