@@ -221,8 +221,16 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         return $this;
     }
 
+    /**
+     * @param string $class
+     * @param string $name
+     * @param array $value - non-array values are @deprecated 1.12.0
+     */
     public function merge($class, $name, $value)
     {
+        if (!is_array($value)) {
+            Deprecation::notice('1.12.0', 'Use set() if $value is not an array instead');
+        }
         // Detect mergeable config
         $existing = $this->get($class, $name, true);
         if (is_array($value) && is_array($existing)) {
