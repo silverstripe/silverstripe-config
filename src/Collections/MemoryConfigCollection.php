@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Config\Collections;
 
+use SilverStripe\Dev\Deprecation;
 use SilverStripe\Config\MergeStrategy\Priority;
 use SilverStripe\Config\Middleware\MiddlewareAware;
 use SilverStripe\Config\Transformer\TransformerInterface;
@@ -81,6 +82,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
         $classKey = strtolower($class ?? '');
         if ($name) {
+            $this->checkForDeprecatedConfig($classKey, $name);
             if (!isset($this->config[$classKey])) {
                 $this->config[$classKey] = [];
             }
@@ -105,9 +107,19 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
 
         // Return either name, or whole-class config
         if ($name) {
+            $this->checkForDeprecatedConfig($class, $name);
             return isset($config[$name]) ? $config[$name] : null;
         }
         return $config;
+    }
+
+    public function checkForDeprecatedConfig($class, $name): void
+    {
+        $deprecated = $this->getClassConfig('__deprecated', true);
+        $data = $deprecated['config'][strtolower($class)][$name] ?? [];
+        if (!empty($data)) {
+            Deprecation::notice($data['version'], $data['message'], Deprecation::SCOPE_CONFIG);
+        }
     }
 
     /**
@@ -193,7 +205,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
     }
 
     /**
-     * @deprecated 4.0...5.0
+     * @deprecated 1.0.0 Use merge() instead
      *
      * Synonym for merge()
      *
@@ -204,12 +216,21 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      */
     public function update($class, $name, $value)
     {
+        Deprecation::notice('1.0.0', 'Use merge() instead');
         $this->merge($class, $name, $value);
         return $this;
     }
 
+    /**
+     * @param string $class
+     * @param string $name
+     * @param array $value - non-array values are @deprecated 1.12.0
+     */
     public function merge($class, $name, $value)
     {
+        if (!is_array($value)) {
+            Deprecation::notice('1.12.0', 'Use set() if $value is not an array instead');
+        }
         // Detect mergeable config
         $existing = $this->get($class, $name, true);
         if (is_array($value) && is_array($existing)) {
@@ -272,10 +293,11 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * The __serialize() magic method will be automatically used instead of this
      *
      * @return string
-     * @deprecated will be removed in 5.0
+     * @deprecated 1.12.0 Use __serialize() instead
      */
     public function serialize()
     {
+        Deprecation::notice('1.12.0', 'Use __serialize() instead');
         return serialize($this->__serialize());
     }
 
@@ -285,10 +307,11 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
      * and the PHP version used in less than PHP 9.0
      *
      * @param string $serialized
-     * @deprecated will be removed in 5.0
+     * @deprecated 1.12.0 Use __unserialize() instead
      */
     public function unserialize($serialized)
     {
+        Deprecation::notice('1.12.0', 'Use __unserialize() instead');
         $data = unserialize($serialized ?? '');
         $this->__unserialize($data);
     }
