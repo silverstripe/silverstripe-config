@@ -2,9 +2,7 @@
 
 namespace SilverStripe\Config\Middleware;
 
-use Serializable;
-
-interface Middleware extends Serializable
+interface Middleware
 {
     /**
      * Get config for a class
