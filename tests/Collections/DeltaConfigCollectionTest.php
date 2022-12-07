@@ -122,9 +122,9 @@ class DeltaConfigCollectionTest extends TestCase
     public function testRemove()
     {
         $collection = $this->scaffoldCollection();
-        $collection->merge('First', 'key', ['value']);
-        $collection->remove('First', null);
-        $collection->merge('Second', 'string', ['bobnew']);
+        $collection->set('First', 'key', 'value');
+        $collection->remove('First');
+        $collection->set('Second', 'string', 'bobnew');
         $collection->merge('Second', 'array', ['four' => 4]);
         $collection->remove('Second', 'array');
 
@@ -144,7 +144,7 @@ class DeltaConfigCollectionTest extends TestCase
         $this->assertFalse($collection->isDeltaReset('Second')); // Only partial reset so false
         $this->assertEquals(
             [
-                'string' => ['bobnew'],
+                'string' => 'bobnew',
                 'bool' => false,
             ],
             $collection->get('Second')
@@ -152,8 +152,8 @@ class DeltaConfigCollectionTest extends TestCase
         $this->assertEquals(
             [
                 [
-                    'type' => 'merge',
-                    'config' => ['string' => ['bobnew']],
+                    'type' => 'set',
+                    'config' => ['string' => 'bobnew'],
                 ],
                 [
                     'type' => DeltaConfigCollection::REMOVE,
@@ -167,7 +167,7 @@ class DeltaConfigCollectionTest extends TestCase
     public function testClear()
     {
         $collection = $this->scaffoldCollection();
-        $collection->merge('First', 'key', ['value']);
+        $collection->set('First', 'key', 'value');
         $collection->remove('First', 'string');
         $collection->removeAll();
 
