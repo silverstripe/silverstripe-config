@@ -17,7 +17,7 @@ class MemoryConfigCollectionTest extends TestCase
         $collection->set('test2', null, 'value');
         $this->assertTrue($collection->exists('test2'));
 
-        $collection->remove('test', null);
+        $collection->remove('test');
         $this->assertFalse($collection->exists('test'));
         $this->assertEquals([], $collection->get('test'));
 

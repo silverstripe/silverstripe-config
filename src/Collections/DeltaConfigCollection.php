@@ -145,9 +145,9 @@ class DeltaConfigCollection extends MemoryConfigCollection
             );
     }
 
-    public function unserialize($serialized)
+    public function __unserialize(array $data): void
     {
-        parent::__unserialize($serialized);
+        parent::__unserialize($data);
         $this->postInit();
     }
 
@@ -166,7 +166,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
         $this->getDeltaMiddleware()->setCollection($this);
     }
 
-    public function set(string $class, string|null $name, mixed $data, array $metadata = []): static
+    public function set(string $class, ?string $name, mixed $data, array $metadata = []): static
     {
         // Check config to merge
         $this->clearDeltas($class, $name);
@@ -184,7 +184,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
         return $this;
     }
 
-    public function remove(string $class, string|null $name): static
+    public function remove(string $class, ?string $name = null): static
     {
         // Check config to merge
         $this->clearDeltas($class, $name);

@@ -75,7 +75,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface
         return $this;
     }
 
-    public function set(string $class, string|null $name, mixed $data, array $metadata = []): static
+    public function set(string $class, ?string $name, mixed $data, array $metadata = []): static
     {
         $this->saveMetadata($class, $metadata);
 
@@ -172,7 +172,7 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface
         return true;
     }
 
-    public function remove(string $class, string|null $name): static
+    public function remove(string $class, ?string $name = null): static
     {
         $classKey = strtolower($class ?? '');
         if ($name) {
