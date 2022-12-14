@@ -10,6 +10,7 @@ use SilverStripe\Dev\Deprecation;
 /**
  * Basic mutable config collection stored in memory
  */
+#[\AllowDynamicProperties]
 class MemoryConfigCollection implements MutableConfigCollectionInterface
 {
     use MiddlewareAware;
