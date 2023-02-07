@@ -3,6 +3,7 @@
 namespace SilverStripe\Config\Collections;
 
 use SilverStripe\Config\Middleware\DeltaMiddleware;
+use SilverStripe\Dev\Deprecation;
 
 /**
  * Applies config modifications as a set of deltas on top of the
@@ -145,9 +146,19 @@ class DeltaConfigCollection extends MemoryConfigCollection
             );
     }
 
+    /**
+     * @deprecated 1.6.0 Use __unserialize() instead
+     */
     public function unserialize($serialized)
     {
+        Deprecation::notice('1.6.0', 'Use __unserialize() instead');
         parent::unserialize($serialized);
+        $this->postInit();
+    }
+
+    public function __unserialize(array $data): void
+    {
+        parent::__unserialize($data);
         $this->postInit();
     }
 
