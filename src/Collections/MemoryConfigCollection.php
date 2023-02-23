@@ -118,7 +118,13 @@ class MemoryConfigCollection implements MutableConfigCollectionInterface, Serial
         $deprecated = $this->getClassConfig('__deprecated', true);
         $data = $deprecated['config'][strtolower($class)][$name] ?? [];
         if (!empty($data)) {
-            Deprecation::notice($data['version'], $data['message'], Deprecation::SCOPE_CONFIG);
+            if ($data['withNoReplacement']) {
+                Deprecation::withNoReplacement(
+                    fn() => Deprecation::notice($data['version'], $data['message'], Deprecation::SCOPE_CONFIG)
+                );
+            } else {
+                Deprecation::notice($data['version'], $data['message'], Deprecation::SCOPE_CONFIG);
+            }
         }
     }
 

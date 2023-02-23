@@ -93,7 +93,12 @@ class PrivateStaticTransformer implements TransformerInterface
             $docComment = $prop->getDocComment();
             if (str_contains($docComment, '@deprecated')) {
                 $propName = $prop->getName();
-                $deprecated[$propName] = $this->getDeprecatedData($docComment, $class, $propName);
+                $deprecated[$propName] = $this->getDeprecatedData(
+                    $docComment,
+                    $class,
+                    $propName,
+                    str_contains($docComment, '@deprecatedWithNoReplacement')
+                );
             }
         }
 
@@ -107,20 +112,26 @@ class PrivateStaticTransformer implements TransformerInterface
         return ['value' => $classConfig, 'metadata' => $metadata, 'deprecated' => $deprecated];
     }
 
-    private function getDeprecatedData(string $docComment, string $class, string $propName): array
-    {
+    private function getDeprecatedData(
+        string $docComment,
+        string $class,
+        string $propName,
+        bool $withNoReplacement
+    ): array {
         $message = "Config $class.$propName is deprecated.";
         // $matches[2] will be an empty string in the case of `@deprecated 1.2.3`
         if (preg_match("#@deprecated ([0-9\.:]+) *(.*)(\n|$)#", $docComment, $matches)) {
             return [
                 'version' => $matches[1],
                 'message' => $this->prepareMessage($message, $matches[2]),
+                'withNoReplacement' => $withNoReplacement,
             ];
         }
         preg_match("#@deprecated *(.*)(\n|$)#", $docComment, $matches);
         return [
             'version' => '1.0.0',
             'message' => $this->prepareMessage($message, $matches[1]),
+            'withNoReplacement' => $withNoReplacement,
         ];
     }
 
