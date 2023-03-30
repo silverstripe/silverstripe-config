@@ -151,7 +151,11 @@ class DeltaConfigCollection extends MemoryConfigCollection
      */
     public function unserialize($serialized)
     {
-        Deprecation::notice('1.6.0', 'Use __unserialize() instead');
+        if (class_exists(Deprecation::class)) {
+            Deprecation::notice('1.6.0', 'Use __unserialize() instead');
+        } else {
+            user_error(__METHOD__ . ' is deprecated. Use __unserialize() instead', E_USER_DEPRECATED);
+        }
         parent::unserialize($serialized);
         $this->postInit();
     }

@@ -71,11 +71,18 @@ trait MiddlewareCommon
      * The __serialize() magic method will be automatically used instead of this
      *
      * @return string
-     * @deprecated 1.12.0 Will be removed without equivalent functionality to replace it
+     * @deprecated 1.12.0 Will be replaced with __serialize()
      */
     public function serialize()
     {
-        Deprecation::notice('1.12.0', 'Will be removed without equivalent functionality to replace it');
+        if (class_exists(Deprecation::class)) {
+            Deprecation::notice('1.12.0', 'Will be replaced with __serialize()');
+        } else {
+            user_error(
+                __METHOD__ . ' is deprecated. Will be replaced with __serialize()',
+                E_USER_DEPRECATED
+            );
+        }
         return json_encode(array_values($this->__serialize() ?? []));
     }
 
@@ -85,11 +92,18 @@ trait MiddlewareCommon
      * and the PHP version used in less than PHP 9.0
      *
      * @param string $serialized
-     * @deprecated 1.12.0 Will be removed without equivalent functionality to replace it
+     * @deprecated 1.12.0 Will be replaced with __unserialize()
      */
     public function unserialize($serialized)
     {
-        Deprecation::notice('1.12.0', 'Will be removed without equivalent functionality to replace it');
+        if (class_exists(Deprecation::class)) {
+            Deprecation::notice('1.12.0', 'Will be replaced with __unserialize()');
+        } else {
+            user_error(
+                __METHOD__ . ' is deprecated. Will be replaced with __unserialize()',
+                E_USER_DEPRECATED
+            );
+        }
         $values = json_decode($serialized ?? '', true);
         foreach (array_keys($this->__serialize() ?? []) as $i => $key) {
             if (!property_exists($this, $key ?? '')) {
