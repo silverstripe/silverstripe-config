@@ -6,6 +6,12 @@
 The aim of this is to implement the Silverstripe config system in a way that can be
 understood by many and to improve performance whilst keeping the powerful features.
 
+## Installation
+
+```sh
+composer require silverstripe/config
+```
+
 # Documentation
 
 * [Manifesto](docs/manifesto.md)
