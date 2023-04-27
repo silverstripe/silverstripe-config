@@ -91,7 +91,7 @@ class PrivateStaticTransformer implements TransformerInterface
 
             // Detect deprecated config
             $docComment = $prop->getDocComment();
-            if (str_contains($docComment, '@deprecated')) {
+            if (strpos($docComment, '@deprecated') !== false) {
                 $propName = $prop->getName();
                 $deprecated[$propName] = $this->getDeprecatedData($docComment, $class, $propName);
             }
