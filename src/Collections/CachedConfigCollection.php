@@ -28,6 +28,11 @@ class CachedConfigCollection implements ConfigCollectionInterface
     protected $collection;
 
     /**
+     * @var string
+     */
+    protected $cachedCollection;
+
+    /**
      * @var callable
      */
     protected $collectionCreator;
@@ -124,6 +129,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
         if (!$this->flush) {
             $this->collection = $this->cache->get(self::CACHE_KEY);
             if ($this->collection) {
+                $this->cachedCollection = serialize($this->collection);
                 return $this->collection;
             }
         }
@@ -142,8 +148,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
         }
 
         // Save immediately.
-        // Note additional deferred save will occur in _destruct()
+        // Note additional deferred save can occur in _destruct()
         $this->cache->set(self::CACHE_KEY, $this->collection);
+        $this->cachedCollection = serialize($this->collection);
         return $this->collection;
     }
 
@@ -153,8 +160,10 @@ class CachedConfigCollection implements ConfigCollectionInterface
     public function __destruct()
     {
         // Ensure back-end cache is updated
-        if ($this->collection) {
-            $this->cache->set(self::CACHE_KEY, $this->collection);
+        if ($this->collection && $this->cachedCollection) {
+            if (serialize($this->collection) != $this->cachedCollection) {
+                $this->cache->set(self::CACHE_KEY, $this->collection);
+            }
 
             // Prevent double-destruct
             $this->collection = null;
