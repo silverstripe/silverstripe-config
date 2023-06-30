@@ -30,7 +30,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
     /**
      * Stores a hash to allow comparison
      */
-    protected string $collectionHash;
+    protected ?string $collectionHash = null;
 
     /**
      * @var callable
@@ -172,6 +172,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
 
             // Prevent double-destruct
             $this->collection = null;
+            $this->collectionHash = null;
         }
     }
 
