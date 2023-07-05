@@ -56,6 +56,59 @@ class CachedConfigCollectionTest extends TestCase
         $collection->__destruct();
     }
 
+    public function testCacheOnDestruct()
+    {
+        $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
+
+        $mockCollection = $this->getMockBuilder(ConfigCollectionInterface::class)->getMock();
+
+        // Cache will be generated, saved, and NOT saved again on __destruct()
+        $mockCache
+            ->expects($this->exactly(1))
+            ->method('set')
+            ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
+
+        $collection = new CachedConfigCollection();
+        $collection->setCollectionCreator(function () use ($mockCollection) {
+            return $mockCollection;
+        });
+        $collection->setCache($mockCache);
+
+        // Triggers cache set
+        $collection->getCollection();
+        // We have a cache, no more cache->set calls
+        $collection->getCollection();
+
+        // Do not write back changes to cache if there are no changes
+        $collection->__destruct();
+
+        $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
+
+        $mockCollection = $this->getMockBuilder(ConfigCollectionInterface::class)->getMock();
+        $mockCollection
+            ->expects($this->once())
+            ->method('get')
+            ->with('test', 'name', 0)
+            ->willReturn('value');
+
+        // Cache will be generated, saved, and saved again on __destruct()
+        $mockCache
+           ->expects($this->exactly(2))
+           ->method('set')
+           ->with(CachedConfigCollection::CACHE_KEY, $mockCollection);
+
+        $collection = new CachedConfigCollection();
+        $collection->setCollectionCreator(function () use ($mockCollection) {
+            return $mockCollection;
+        });
+        $collection->setCache($mockCache);
+
+        // Making a get call will update the callCache
+        $this->assertEquals('value', $collection->get('test', 'name'));
+
+        $collection->__destruct();
+    }
+
     public function testCacheMiss()
     {
         $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
