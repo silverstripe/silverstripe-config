@@ -76,7 +76,7 @@ class CachedConfigCollectionTest extends TestCase
 
         // Triggers cache set
         $collection->getCollection();
-        // We have a cache, no more cache->set calls
+        // Call again to validate that cache set() is only called once
         $collection->getCollection();
 
         // Do not write back changes to cache if there are no changes
