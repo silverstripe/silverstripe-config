@@ -166,7 +166,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
     {
         // Ensure back-end cache is updated
         if ($this->collection && $this->collectionHash) {
-            if ($this->getHash() != $this->collectionHash) {
+            if ($this->getHash() !== $this->collectionHash) {
                 $this->cache->set(self::CACHE_KEY, $this->collection);
             }
 
