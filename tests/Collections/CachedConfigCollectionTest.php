@@ -79,7 +79,7 @@ class CachedConfigCollectionTest extends TestCase
         // Call again to validate that cache set() is only called once
         $collection->getCollection();
 
-        // Do not write back changes to cache if there are no changes
+        // Trigger __destruct() to validate that cache set() is not called again since there were no changes
         $collection->__destruct();
 
         $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
