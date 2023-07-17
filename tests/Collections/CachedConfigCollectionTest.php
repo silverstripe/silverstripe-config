@@ -56,7 +56,7 @@ class CachedConfigCollectionTest extends TestCase
         $collection->__destruct();
     }
 
-    public function testCacheOnDestruct()
+    public function testCacheNotSavedOnDestruct()
     {
         $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
 
@@ -81,7 +81,10 @@ class CachedConfigCollectionTest extends TestCase
 
         // Trigger __destruct() to validate that cache set() is not called again since there were no changes
         $collection->__destruct();
+    }
 
+    public function testCacheSavedOnDestruct()
+    {
         $mockCache = $this->getMockBuilder(CacheInterface::class)->getMock();
 
         $mockCollection = $this->getMockBuilder(ConfigCollectionInterface::class)->getMock();
