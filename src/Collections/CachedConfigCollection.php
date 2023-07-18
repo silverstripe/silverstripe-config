@@ -28,6 +28,11 @@ class CachedConfigCollection implements ConfigCollectionInterface
     protected $collection;
 
     /**
+     * Stores a hash to allow comparison
+     */
+    private ?string $collectionHash = null;
+
+    /**
      * @var callable
      */
     protected $collectionCreator;
@@ -108,6 +113,11 @@ class CachedConfigCollection implements ConfigCollectionInterface
         return $this->getCollection()->getHistory();
     }
 
+    private function getHash(): string
+    {
+        return md5(serialize($this->collection));
+    }
+
     /**
      * Get or build collection
      *
@@ -124,6 +134,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
         if (!$this->flush) {
             $this->collection = $this->cache->get(self::CACHE_KEY);
             if ($this->collection) {
+                $this->collectionHash = $this->getHash();
                 return $this->collection;
             }
         }
@@ -142,8 +153,9 @@ class CachedConfigCollection implements ConfigCollectionInterface
         }
 
         // Save immediately.
-        // Note additional deferred save will occur in _destruct()
+        // Note additional deferred save can occur in _destruct()
         $this->cache->set(self::CACHE_KEY, $this->collection);
+        $this->collectionHash = $this->getHash();
         return $this->collection;
     }
 
@@ -153,11 +165,14 @@ class CachedConfigCollection implements ConfigCollectionInterface
     public function __destruct()
     {
         // Ensure back-end cache is updated
-        if ($this->collection) {
-            $this->cache->set(self::CACHE_KEY, $this->collection);
+        if ($this->collection && $this->collectionHash) {
+            if ($this->getHash() !== $this->collectionHash) {
+                $this->cache->set(self::CACHE_KEY, $this->collection);
+            }
 
             // Prevent double-destruct
             $this->collection = null;
+            $this->collectionHash = null;
         }
     }
 
