@@ -70,7 +70,6 @@ class PrivateStaticTransformer implements TransformerInterface
     {
         $reflection = new ReflectionClass($class);
 
-        /** @var ReflectionProperty[] $props **/
         $props = $reflection->getProperties(ReflectionProperty::IS_STATIC);
 
         $classConfig = [];
