@@ -132,7 +132,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
 
         // Load from cache (unless flushing)
         if (!$this->flush) {
-            $this->collection = $this->cache->get(self::CACHE_KEY);
+            $this->collection = $this->cache->get(CachedConfigCollection::CACHE_KEY);
             if ($this->collection) {
                 $this->collectionHash = $this->getHash();
                 return $this->collection;
@@ -154,7 +154,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
 
         // Save immediately.
         // Note additional deferred save can occur in _destruct()
-        $this->cache->set(self::CACHE_KEY, $this->collection);
+        $this->cache->set(CachedConfigCollection::CACHE_KEY, $this->collection);
         $this->collectionHash = $this->getHash();
         return $this->collection;
     }
@@ -167,7 +167,7 @@ class CachedConfigCollection implements ConfigCollectionInterface
         // Ensure back-end cache is updated
         if ($this->collection && $this->collectionHash) {
             if ($this->getHash() !== $this->collectionHash) {
-                $this->cache->set(self::CACHE_KEY, $this->collection);
+                $this->cache->set(CachedConfigCollection::CACHE_KEY, $this->collection);
             }
 
             // Prevent double-destruct
