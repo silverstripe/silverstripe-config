@@ -141,7 +141,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
         return isset($deltas[0]['type'])
             && in_array(
                 $deltas[0]['type'],
-                [self::REPLACE, self::CLEAR]
+                [DeltaConfigCollection::REPLACE, DeltaConfigCollection::CLEAR]
             );
     }
 
@@ -172,12 +172,12 @@ class DeltaConfigCollection extends MemoryConfigCollection
         $this->clearDeltas($class, $name);
         if ($name) {
             $this->addDelta($class, [
-                'type' => self::SET,
+                'type' => DeltaConfigCollection::SET,
                 'config' => [$name => $data],
             ]);
         } else {
             $this->addDelta($class, [
-                'type' => self::REPLACE,
+                'type' => DeltaConfigCollection::REPLACE,
                 'config' => $data,
             ]);
         }
@@ -190,12 +190,12 @@ class DeltaConfigCollection extends MemoryConfigCollection
         $this->clearDeltas($class, $name);
         if ($name) {
             $this->addDelta($class, [
-                'type' => self::REMOVE,
+                'type' => DeltaConfigCollection::REMOVE,
                 'config' => [$name => true],
             ]);
         } else {
             $this->addDelta($class, [
-                'type' => self::CLEAR,
+                'type' => DeltaConfigCollection::CLEAR,
             ]);
         }
         return $this;
@@ -210,7 +210,7 @@ class DeltaConfigCollection extends MemoryConfigCollection
             $config = $value;
         }
         $this->addDelta($class, [
-            'type' => self::MERGE,
+            'type' => DeltaConfigCollection::MERGE,
             'config' => $config,
         ]);
         return $this;

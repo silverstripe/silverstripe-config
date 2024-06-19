@@ -333,7 +333,7 @@ class YamlTransformer implements TransformerInterface
             // Add 'after' dependencies
             $dependencies = $this->addDependencies(
                 $header,
-                self::AFTER_FLAG,
+                YamlTransformer::AFTER_FLAG,
                 $dependencies,
                 $documents
             );
@@ -341,7 +341,7 @@ class YamlTransformer implements TransformerInterface
             // Add 'before' dependencies
             $dependencies = $this->addDependencies(
                 $header,
-                self::BEFORE_FLAG,
+                YamlTransformer::BEFORE_FLAG,
                 $dependencies,
                 $documents
             );
@@ -363,7 +363,7 @@ class YamlTransformer implements TransformerInterface
     protected function addDependencies($header, $flag, $dependencies, $documents)
     {
         // If header isn't set then return dependencies
-        if (!isset($header[$flag]) || !in_array($flag, [self::BEFORE_FLAG, self::AFTER_FLAG])) {
+        if (!isset($header[$flag]) || !in_array($flag, [YamlTransformer::BEFORE_FLAG, YamlTransformer::AFTER_FLAG])) {
             return $dependencies;
         }
 
@@ -383,7 +383,7 @@ class YamlTransformer implements TransformerInterface
                     $dependencies[$dependencyName] = [];
                 }
 
-                if ($flag == self::AFTER_FLAG) {
+                if ($flag == YamlTransformer::AFTER_FLAG) {
                     // For 'after' we add the given dependency to the current document
                     $dependencies[$header['name']][] = $dependencyName;
                 } else {
@@ -538,12 +538,12 @@ class YamlTransformer implements TransformerInterface
         $filtered = [];
         foreach ($documents as $key => $document) {
             // If not all rules match, then we exclude this document
-            if (!$this->testRules($document['header'], self::ONLY_FLAG)) {
+            if (!$this->testRules($document['header'], YamlTransformer::ONLY_FLAG)) {
                 continue;
             }
 
             // If all rules pass, then we exclude this document
-            if ($this->testRules($document['header'], self::EXCEPT_FLAG)) {
+            if ($this->testRules($document['header'], YamlTransformer::EXCEPT_FLAG)) {
                 continue;
             }
 
@@ -566,7 +566,7 @@ class YamlTransformer implements TransformerInterface
         // If flag is not set, then it has no tests
         if (!isset($header[$flag])) {
             // We want only to pass, except to fail
-            return $flag === self::ONLY_FLAG;
+            return $flag === YamlTransformer::ONLY_FLAG;
         }
 
         if (!is_array($header[$flag])) {
@@ -592,7 +592,7 @@ class YamlTransformer implements TransformerInterface
      * @return bool
      * @throws Exception
      */
-    protected function testSingleRule($rule, $params, $flag = self::ONLY_FLAG)
+    protected function testSingleRule($rule, $params, $flag = YamlTransformer::ONLY_FLAG)
     {
         $rule = strtolower($rule ?? '');
         if (!$this->hasRule($rule)) {
@@ -637,16 +637,16 @@ class YamlTransformer implements TransformerInterface
             }
 
             // Only fails if any are false
-            if ($flag === self::ONLY_FLAG && !$result) {
+            if ($flag === YamlTransformer::ONLY_FLAG && !$result) {
                 return false;
             }
             // Except succeeds if any true
-            if ($flag === self::EXCEPT_FLAG && $result) {
+            if ($flag === YamlTransformer::EXCEPT_FLAG && $result) {
                 return true;
             }
         }
 
         // Default based on flag
-        return $flag === self::ONLY_FLAG;
+        return $flag === YamlTransformer::ONLY_FLAG;
     }
 }
