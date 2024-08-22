@@ -3,7 +3,7 @@
     "description": "SilverStripe configuration based on YAML and class statics",
     "license": "BSD-3-Clause",
     "require": {
-        "php": "^8.1",
+        "php": "^8.3",
         "symfony/finder": "^6.1",
         "symfony/yaml": "^6.1",
         "marcj/topsort": "^2.0.0",
