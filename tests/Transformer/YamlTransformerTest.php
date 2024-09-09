@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use org\bovigo\vfs\vfsStream;
 use Symfony\Component\Finder\Finder;
 use MJS\TopSort\CircularDependencyException;
+use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 
 class YamlTransformerTest extends TestCase
 {
@@ -74,8 +75,8 @@ class YamlTransformerTest extends TestCase
 
     /**
      * Test that we can have an empty file without throwing any errors.
-     * @doesNotPerformAssertions
      */
+    #[DoesNotPerformAssertions]
     public function testEmptyFileIgnored()
     {
         file_put_contents($this->getFilePath('empty.yml') ?? '', '');
