@@ -10,6 +10,7 @@ use MJS\TopSort\Implementations\ArraySort;
 use Exception;
 use Closure;
 use SilverStripe\Config\Collections\MemoryConfigCollection;
+use SilverStripe\Dev\Deprecation;
 
 class YamlTransformer implements TransformerInterface
 {
@@ -135,6 +136,15 @@ class YamlTransformer implements TransformerInterface
         if (!($collection instanceof MemoryConfigCollection)) {
             return;
         }
+        $showNoticesCalledFromSupportedCode = false;
+        if (class_exists(Deprecation::class)
+            && method_exists(Deprecation::class, 'getShowNoticesCalledFromSupportedCode')
+        ) {
+            $showNoticesCalledFromSupportedCode = Deprecation::getShowNoticesCalledFromSupportedCode();
+        }
+        if ($document['inSupportedModule'] && !$showNoticesCalledFromSupportedCode) {
+            return;
+        }
         foreach ($document['content'] as $key => $value) {
             if (!is_array($value)) {
                 continue;
@@ -240,8 +250,14 @@ class YamlTransformer implements TransformerInterface
                 );
             }
 
+            $inSupportedModule = false;
+            if (class_exists(Deprecation::class) && method_exists(Deprecation::class, 'fileIsInSupportedModule')) {
+                $inSupportedModule = Deprecation::fileIsInSupportedModule($document['filename']);
+            }
+            $filename = $document['filename'];
             $documents[$header['name']] = [
-                'filename' => $document['filename'],
+                'filename' => $filename,
+                'inSupportedModule' => $inSupportedModule,
                 'header' => $header,
                 'content' => $content,
             ];
