@@ -82,7 +82,6 @@ class PrivateStaticTransformer implements TransformerInterface
 
             // Note that some non-config private statics may be assigned
             // un-serializable values. Detect these here
-            $prop->setAccessible(true);
             $value = $prop->getValue();
             if ($this->isConfigValue($value)) {
                 $classConfig[$prop->getName()] = $value;
